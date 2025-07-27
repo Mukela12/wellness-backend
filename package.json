@@ -13,7 +13,6 @@
   "license": "ISC",
   "description": "WellnessAI Platform Backend - AI-driven employee wellness platform with daily check-ins, mental health tracking, and WhatsApp integration",
   "dependencies": {
-    "@google-cloud/language": "^7.2.0",
     "@sendgrid/mail": "^8.1.5",
     "axios": "^1.11.0",
     "bcryptjs": "^3.0.2",
