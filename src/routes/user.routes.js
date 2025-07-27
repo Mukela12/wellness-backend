@@ -34,21 +34,21 @@ const {
  * @access  Admin only
  * @query   page, limit, search, role, department, status, sortBy, sortOrder
  */
-router.get('/', authenticate, authorize(['admin']), getUsersQueryValidation, validate, getAllUsers);
+router.get('/', authenticate, authorize('admin'), getUsersQueryValidation, validate, getAllUsers);
 
 /**
  * @route   GET /api/users/departments
  * @desc    Get all departments (for dropdowns)
  * @access  Admin only
  */
-router.get('/departments', authenticate, authorize(['admin']), getDepartments);
+router.get('/departments', authenticate, authorize('admin'), getDepartments);
 
 /**
  * @route   GET /api/users/:id
  * @desc    Get user by ID with wellness stats
  * @access  Admin only
  */
-router.get('/:id', authenticate, authorize(['admin']), idValidation, validate, getUserById);
+router.get('/:id', authenticate, authorize('admin'), idValidation, validate, getUserById);
 
 /**
  * @route   POST /api/users
@@ -56,7 +56,7 @@ router.get('/:id', authenticate, authorize(['admin']), idValidation, validate, g
  * @access  Admin only
  * @body    name, email, password, role, department, employeeId, phone
  */
-router.post('/', authenticate, authorize(['admin']), createUserValidation, validate, createUser);
+router.post('/', authenticate, authorize('admin'), createUserValidation, validate, createUser);
 
 /**
  * @route   POST /api/users/bulk-action
@@ -64,7 +64,7 @@ router.post('/', authenticate, authorize(['admin']), createUserValidation, valid
  * @access  Admin only
  * @body    action (activate|deactivate|delete), userIds[]
  */
-router.post('/bulk-action', authenticate, authorize(['admin']), bulkActionValidation, validate, bulkUserAction);
+router.post('/bulk-action', authenticate, authorize('admin'), bulkActionValidation, validate, bulkUserAction);
 
 /**
  * @route   PUT /api/users/:id
@@ -72,7 +72,7 @@ router.post('/bulk-action', authenticate, authorize(['admin']), bulkActionValida
  * @access  Admin only
  * @body    name, email, role, department, employeeId, phone, isActive
  */
-router.put('/:id', authenticate, authorize(['admin']), updateUserValidation, validate, updateUser);
+router.put('/:id', authenticate, authorize('admin'), updateUserValidation, validate, updateUser);
 
 /**
  * @route   PATCH /api/users/:id/status
@@ -80,7 +80,7 @@ router.put('/:id', authenticate, authorize(['admin']), updateUserValidation, val
  * @access  Admin only
  * @body    isActive (boolean)
  */
-router.patch('/:id/status', authenticate, authorize(['admin']), toggleStatusValidation, validate, toggleUserStatus);
+router.patch('/:id/status', authenticate, authorize('admin'), toggleStatusValidation, validate, toggleUserStatus);
 
 /**
  * @route   PATCH /api/users/:id/role
@@ -88,13 +88,13 @@ router.patch('/:id/status', authenticate, authorize(['admin']), toggleStatusVali
  * @access  Admin only
  * @body    role (employee|manager|hr|admin)
  */
-router.patch('/:id/role', authenticate, authorize(['admin']), updateRoleValidation, validate, updateUserRole);
+router.patch('/:id/role', authenticate, authorize('admin'), updateRoleValidation, validate, updateUserRole);
 
 /**
  * @route   DELETE /api/users/:id
  * @desc    Delete user
  * @access  Admin only
  */
-router.delete('/:id', authenticate, authorize(['admin']), idValidation, validate, deleteUser);
+router.delete('/:id', authenticate, authorize('admin'), idValidation, validate, deleteUser);
 
 module.exports = router;
