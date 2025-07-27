@@ -1,5 +1,5 @@
 const { body, param, query } = require('express-validator');
-const { DEPARTMENTS, MOOD_SCALE } = require('../config/constants');
+const { DEPARTMENTS, MOOD_SCALE, ROLES } = require('../config/constants');
 
 // User registration validation
 const validateRegistration = [
@@ -35,7 +35,12 @@ const validateRegistration = [
   body('phone')
     .optional()
     .isMobilePhone()
-    .withMessage('Please provide a valid phone number')
+    .withMessage('Please provide a valid phone number'),
+
+  body('role')
+    .optional()
+    .isIn(Object.values(ROLES))
+    .withMessage(`Role must be one of: ${Object.values(ROLES).join(', ')}`)
 ];
 
 // User login validation
@@ -185,24 +190,12 @@ const validateSurveyResponse = [
 const validateOnboarding = [
   body('answers')
     .isObject()
-    .withMessage('Answers must be an object')
-    .custom((answers) => {
-      // Check if required onboarding questions are answered
-      const requiredQuestions = [
-        'workStyle',
-        'stressLevel',
-        'workLifeBalance',
-        'teamCollaboration',
-        'careerGoals'
-      ];
+    .withMessage('Answers must be an object'),
 
-      for (const question of requiredQuestions) {
-        if (!answers[question]) {
-          throw new Error(`Missing required answer for: ${question}`);
-        }
-      }
-      return true;
-    })
+  body('sectionCompleted')
+    .optional()
+    .isString()
+    .withMessage('Section completed must be a string')
 ];
 
 // ID parameter validation
@@ -315,6 +308,74 @@ const validateWhatsAppWebhook = [
     .withMessage('Challenge is required')
 ];
 
+// Profile preferences validation
+const validatePreferences = [
+  body('notifications.checkInReminder')
+    .optional()
+    .isBoolean()
+    .withMessage('Check-in reminder must be a boolean'),
+
+  body('notifications.surveyReminder')
+    .optional()
+    .isBoolean()
+    .withMessage('Survey reminder must be a boolean'),
+
+  body('notifications.rewardUpdates')
+    .optional()
+    .isBoolean()
+    .withMessage('Reward updates must be a boolean'),
+
+  body('notifications.preferredChannel')
+    .optional()
+    .isIn(['email', 'whatsapp', 'both'])
+    .withMessage('Preferred channel must be email, whatsapp, or both'),
+
+  body('notifications.reminderTime')
+    .optional()
+    .matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/)
+    .withMessage('Reminder time must be in HH:MM format (24-hour)'),
+
+  body('personality.interests')
+    .optional()
+    .isArray()
+    .withMessage('Interests must be an array'),
+
+  body('personality.interests.*')
+    .optional()
+    .isString()
+    .isLength({ min: 1, max: 50 })
+    .withMessage('Each interest must be 1-50 characters'),
+
+  body('personality.stressManagement')
+    .optional()
+    .isArray()
+    .withMessage('Stress management techniques must be an array'),
+
+  body('personality.stressManagement.*')
+    .optional()
+    .isString()
+    .isLength({ min: 1, max: 100 })
+    .withMessage('Each stress management technique must be 1-100 characters')
+];
+
+// Wellness stats query validation
+const validateWellnessStats = [
+  query('period')
+    .optional()
+    .isInt({ min: 1, max: 365 })
+    .withMessage('Period must be between 1 and 365 days')
+];
+
+// Account deletion validation
+const validateAccountDeletion = [
+  body('password')
+    .notEmpty()
+    .withMessage('Password is required to delete account')
+];
+
+// Import WhatsApp validation
+const validateWhatsApp = require('./validation/whatsappValidation');
+
 module.exports = {
   validateRegistration,
   validateLogin,
@@ -329,5 +390,9 @@ module.exports = {
   validateListQuery,
   validateDateRange,
   validateRewardRedemption,
-  validateWhatsAppWebhook
+  validateWhatsAppWebhook,
+  validatePreferences,
+  validateWellnessStats,
+  validateAccountDeletion,
+  validateWhatsApp
 };

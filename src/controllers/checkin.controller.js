@@ -2,6 +2,7 @@ const { validationResult } = require('express-validator');
 const CheckIn = require('../models/CheckIn');
 const User = require('../models/User');
 const { HTTP_STATUS, MOOD_SCALE } = require('../config/constants');
+const openaiService = require('../services/openai.service');
 
 class CheckInController {
   // Create daily check-in
@@ -60,6 +61,39 @@ class CheckInController {
       if (streakBonus > 0) {
         user.wellness.happyCoins += streakBonus;
         await user.save();
+      }
+
+      // Perform AI analysis in background (don't block response)
+      if (openaiService.isEnabled) {
+        setImmediate(async () => {
+          try {
+            const checkInData = {
+              mood,
+              feedback,
+              user: {
+                department: user.department,
+                wellness: user.wellness
+              }
+            };
+
+            const analysis = await openaiService.analyzeCheckIn(checkInData);
+            
+            if (analysis) {
+              await CheckIn.findByIdAndUpdate(checkIn._id, {
+                'analysis.sentimentScore': analysis.sentimentScore,
+                'analysis.emotions': analysis.emotions,
+                'analysis.riskIndicators': analysis.riskIndicators,
+                'analysis.personalizedMessage': analysis.personalizedMessage,
+                'analysis.recommendations': analysis.recommendations,
+                processed: true
+              });
+              
+              console.log(`✅ AI analysis completed for check-in ${checkIn._id}`);
+            }
+          } catch (error) {
+            console.error(`❌ AI analysis failed for check-in ${checkIn._id}:`, error.message);
+          }
+        });
       }
 
       res.status(HTTP_STATUS.CREATED).json({

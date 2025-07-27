@@ -17,7 +17,7 @@ const router = express.Router();
  * @route   POST /api/auth/register
  * @desc    Register a new user
  * @access  Public
- * @body    { name, email, password, employeeId, department, phone? }
+ * @body    { name, email, password, employeeId, department, phone?, role? }
  */
 router.post('/register', validateRegistration, authController.register);
 

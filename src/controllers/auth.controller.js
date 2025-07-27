@@ -18,7 +18,7 @@ class AuthController {
         });
       }
 
-      const { name, email, password, employeeId, department, phone } = req.body;
+      const { name, email, password, employeeId, department, phone, role } = req.body;
 
       // Check if user already exists
       const existingUser = await User.findOne({
@@ -41,7 +41,8 @@ class AuthController {
         password,
         employeeId: employeeId.toUpperCase().trim(),
         department,
-        phone: phone?.trim()
+        phone: phone?.trim(),
+        role: role || 'employee' // Default to employee if no role specified
       });
 
       // Generate email verification token
