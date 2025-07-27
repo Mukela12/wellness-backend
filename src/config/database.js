@@ -2,13 +2,9 @@ const mongoose = require('mongoose');
 
 const connectDB = async () => {
   try {
-    let mongoUri = process.env.MONGODB_URI || process.env.MONGO_URL;
+    const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URL;
     
-    // Add database name if not present
-    if (mongoUri && !mongoUri.includes('?') && !mongoUri.endsWith('/')) {
-      mongoUri += '/wellness-db';
-    }
-    
+    // Don't modify the URI - use as provided
     const conn = await mongoose.connect(mongoUri);
 
     console.log(` MongoDB Connected: ${conn.connection.host}`);
