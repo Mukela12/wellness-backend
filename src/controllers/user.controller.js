@@ -1,6 +1,6 @@
 const User = require('../models/User');
 const CheckIn = require('../models/CheckIn');
-const { sendResponse, sendError } = require('../utils/responseUtils');
+const { sendSuccessResponse, sendErrorResponse } = require('../utils/responseUtils');
 const bcrypt = require('bcryptjs');
 
 /**
@@ -78,20 +78,23 @@ const getAllUsers = async (req, res) => {
     const hasNextPage = parseInt(page) < totalPages;
     const hasPrevPage = parseInt(page) > 1;
 
-    sendResponse(res, 200, 'Users retrieved successfully', {
-      users,
-      pagination: {
-        currentPage: parseInt(page),
-        totalPages,
-        totalCount,
-        limit: parseInt(limit),
-        hasNextPage,
-        hasPrevPage
+    sendSuccessResponse(res, {
+      message: 'Users retrieved successfully',
+      data: {
+        users,
+        pagination: {
+          currentPage: parseInt(page),
+          totalPages,
+          totalCount,
+          limit: parseInt(limit),
+          hasNextPage,
+          hasPrevPage
+        }
       }
-    });
+    }, 200);
   } catch (error) {
     console.error('Error fetching users:', error);
-    sendError(res, 500, 'Failed to fetch users', error.message);
+    sendErrorResponseResponse(res, 'Failed to fetch users', 500);
   }
 };
 
@@ -107,7 +110,7 @@ const getUserById = async (req, res) => {
     const user = await User.findById(id).select('-password -__v').lean();
     
     if (!user) {
-      return sendError(res, 404, 'User not found');
+      return sendErrorResponse(res, 'User not found', 404);
     }
 
     // Get wellness statistics
@@ -129,15 +132,18 @@ const getUserById = async (req, res) => {
       totalHappyCoins: 0
     };
 
-    sendResponse(res, 200, 'User retrieved successfully', {
-      user: {
-        ...user,
-        wellnessStats
+    sendSuccessResponse(res, {
+      message: 'User retrieved successfully',
+      data: {
+        user: {
+          ...user,
+          wellnessStats
+        }
       }
-    });
+    }, 200);
   } catch (error) {
     console.error('Error fetching user:', error);
-    sendError(res, 500, 'Failed to fetch user', error.message);
+    sendErrorResponse(res, 'Failed to fetch user', 500);
   }
 };
 
@@ -166,10 +172,10 @@ const createUser = async (req, res) => {
 
     if (existingUser) {
       if (existingUser.email === email) {
-        return sendError(res, 400, 'User with this email already exists');
+        return sendErrorResponse(res, 'User with this email already exists', 400);
       }
       if (existingUser.employeeId === employeeId) {
-        return sendError(res, 400, 'User with this employee ID already exists');
+        return sendErrorResponse(res, 'User with this employee ID already exists', 400);
       }
     }
 
@@ -203,12 +209,15 @@ const createUser = async (req, res) => {
     const userResponse = user.toObject();
     delete userResponse.password;
 
-    sendResponse(res, 201, 'User created successfully', {
-      user: userResponse
-    });
+    sendSuccessResponse(res, {
+      message: 'User created successfully',
+      data: {
+        user: userResponse
+      }
+    }, 201);
   } catch (error) {
     console.error('Error creating user:', error);
-    sendError(res, 500, 'Failed to create user', error.message);
+    sendErrorResponse(res, 'Failed to create user', 500);
   }
 };
 
@@ -236,7 +245,7 @@ const updateUser = async (req, res) => {
       
       const existingUser = await User.findOne(query);
       if (existingUser) {
-        return sendError(res, 400, 'User with this email or employee ID already exists');
+        return sendErrorResponse(res, 'User with this email or employee ID already exists', 400);
       }
     }
 
@@ -247,13 +256,16 @@ const updateUser = async (req, res) => {
     ).select('-password -__v');
 
     if (!user) {
-      return sendError(res, 404, 'User not found');
+      return sendErrorResponse(res, 'User not found', 404);
     }
 
-    sendResponse(res, 200, 'User updated successfully', { user });
+    sendSuccessResponse(res, {
+      message: 'User updated successfully',
+      data: { user }
+    }, 200);
   } catch (error) {
     console.error('Error updating user:', error);
-    sendError(res, 500, 'Failed to update user', error.message);
+    sendErrorResponse(res, 'Failed to update user', 500);
   }
 };
 
@@ -268,28 +280,31 @@ const deleteUser = async (req, res) => {
     
     // Prevent deletion of the current admin user
     if (id === req.user.id) {
-      return sendError(res, 400, 'Cannot delete your own account');
+      return sendErrorResponse(res, 'Cannot delete your own account', 400);
     }
 
     const user = await User.findByIdAndDelete(id);
     
     if (!user) {
-      return sendError(res, 404, 'User not found');
+      return sendErrorResponse(res, 'User not found', 404);
     }
 
     // TODO: Consider soft delete instead of hard delete
     // and cleanup related data (check-ins, surveys, etc.)
 
-    sendResponse(res, 200, 'User deleted successfully', {
-      deletedUser: {
-        id: user._id,
-        name: user.name,
-        email: user.email
+    sendSuccessResponse(res, {
+      message: 'User deleted successfully',
+      data: {
+        deletedUser: {
+          id: user._id,
+          name: user.name,
+          email: user.email
+        }
       }
-    });
+    }, 200);
   } catch (error) {
     console.error('Error deleting user:', error);
-    sendError(res, 500, 'Failed to delete user', error.message);
+    sendErrorResponse(res, 'Failed to delete user', 500);
   }
 };
 
@@ -304,12 +319,12 @@ const toggleUserStatus = async (req, res) => {
     const { isActive } = req.body;
     
     if (typeof isActive !== 'boolean') {
-      return sendError(res, 400, 'isActive must be a boolean value');
+      return sendErrorResponse(res, 'isActive must be a boolean value', 400);
     }
 
     // Prevent deactivating the current admin user
     if (id === req.user.id && !isActive) {
-      return sendError(res, 400, 'Cannot deactivate your own account');
+      return sendErrorResponse(res, 'Cannot deactivate your own account', 400);
     }
 
     const user = await User.findByIdAndUpdate(
@@ -319,15 +334,18 @@ const toggleUserStatus = async (req, res) => {
     ).select('-password -__v');
 
     if (!user) {
-      return sendError(res, 404, 'User not found');
+      return sendErrorResponse(res, 'User not found', 404);
     }
 
-    sendResponse(res, 200, `User ${isActive ? 'activated' : 'deactivated'} successfully`, {
-      user
-    });
+    sendSuccessResponse(res, {
+      message: `User ${isActive ? 'activated' : 'deactivated'} successfully`,
+      data: {
+        user
+      }
+    }, 200);
   } catch (error) {
     console.error('Error updating user status:', error);
-    sendError(res, 500, 'Failed to update user status', error.message);
+    sendErrorResponse(res, 'Failed to update user status', 500);
   }
 };
 
@@ -341,17 +359,17 @@ const bulkUserAction = async (req, res) => {
     const { action, userIds } = req.body;
     
     if (!Array.isArray(userIds) || userIds.length === 0) {
-      return sendError(res, 400, 'userIds must be a non-empty array');
+      return sendErrorResponse(res, 'userIds must be a non-empty array', 400);
     }
 
     const validActions = ['activate', 'deactivate', 'delete'];
     if (!validActions.includes(action)) {
-      return sendError(res, 400, 'Invalid action. Must be: activate, deactivate, or delete');
+      return sendErrorResponse(res, 'Invalid action. Must be: activate, deactivate, or delete', 400);
     }
 
     // Prevent actions on current admin user
     if (userIds.includes(req.user.id)) {
-      return sendError(res, 400, 'Cannot perform bulk actions on your own account');
+      return sendErrorResponse(res, 'Cannot perform bulk actions on your own account', 400);
     }
 
     let result;
@@ -376,14 +394,17 @@ const bulkUserAction = async (req, res) => {
         break;
     }
 
-    sendResponse(res, 200, `Bulk ${action} completed successfully`, {
-      action,
-      affectedCount: result.modifiedCount || result.deletedCount,
-      userIds
-    });
+    sendSuccessResponse(res, {
+      message: `Bulk ${action} completed successfully`,
+      data: {
+        action,
+        affectedCount: result.modifiedCount || result.deletedCount,
+        userIds
+      }
+    }, 200);
   } catch (error) {
     console.error('Error performing bulk action:', error);
-    sendError(res, 500, 'Failed to perform bulk action', error.message);
+    sendErrorResponse(res, 'Failed to perform bulk action', 500);
   }
 };
 
@@ -399,12 +420,12 @@ const updateUserRole = async (req, res) => {
     
     const validRoles = ['employee', 'manager', 'hr', 'admin'];
     if (!validRoles.includes(role)) {
-      return sendError(res, 400, 'Invalid role. Must be: employee, manager, hr, or admin');
+      return sendErrorResponse(res, 'Invalid role. Must be: employee, manager, hr, or admin', 400);
     }
 
     // Prevent changing role of current admin user
     if (id === req.user.id) {
-      return sendError(res, 400, 'Cannot change your own role');
+      return sendErrorResponse(res, 'Cannot change your own role', 400);
     }
 
     const user = await User.findByIdAndUpdate(
@@ -414,13 +435,16 @@ const updateUserRole = async (req, res) => {
     ).select('-password -__v');
 
     if (!user) {
-      return sendError(res, 404, 'User not found');
+      return sendErrorResponse(res, 'User not found', 404);
     }
 
-    sendResponse(res, 200, 'User role updated successfully', { user });
+    sendSuccessResponse(res, {
+      message: 'User role updated successfully',
+      data: { user }
+    }, 200);
   } catch (error) {
     console.error('Error updating user role:', error);
-    sendError(res, 500, 'Failed to update user role', error.message);
+    sendErrorResponse(res, 'Failed to update user role', 500);
   }
 };
 
@@ -433,12 +457,15 @@ const getDepartments = async (req, res) => {
   try {
     const departments = await User.distinct('department');
     
-    sendResponse(res, 200, 'Departments retrieved successfully', {
-      departments: departments.filter(dept => dept).sort()
-    });
+    sendSuccessResponse(res, {
+      message: 'Departments retrieved successfully',
+      data: {
+        departments: departments.filter(dept => dept).sort()
+      }
+    }, 200);
   } catch (error) {
     console.error('Error fetching departments:', error);
-    sendError(res, 500, 'Failed to fetch departments', error.message);
+    sendErrorResponse(res, 'Failed to fetch departments', 500);
   }
 };
 
