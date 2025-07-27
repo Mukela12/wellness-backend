@@ -4,8 +4,12 @@ const connectDB = async () => {
   try {
     const mongoUri = process.env.MONGODB_URI || process.env.MONGO_URL;
     
-    // Don't modify the URI - use as provided
-    const conn = await mongoose.connect(mongoUri);
+    // Connect with auth options
+    const conn = await mongoose.connect(mongoUri, {
+      authSource: 'admin',
+      retryWrites: true,
+      w: 'majority'
+    });
 
     console.log(` MongoDB Connected: ${conn.connection.host}`);
 
