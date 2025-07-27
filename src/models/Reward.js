@@ -212,7 +212,6 @@ const redemptionSchema = new mongoose.Schema({
 // Indexes
 redemptionSchema.index({ userId: 1, status: 1 });
 redemptionSchema.index({ rewardId: 1 });
-redemptionSchema.index({ redemptionCode: 1 });
 redemptionSchema.index({ 'timeline.requestedAt': -1 });
 
 // Generate unique redemption code
