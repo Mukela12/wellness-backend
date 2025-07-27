@@ -1,7 +1,7 @@
 const express = require('express');
 const router = express.Router();
 const onboardingController = require('../controllers/onboarding.controller');
-const { authenticate } = require('../middleware/auth');
+const { authenticate, requireEmailVerificationByRole } = require('../middleware/auth');
 const { validateOnboarding } = require('../middleware/validation');
 const transformOnboardingData = require('../middleware/onboardingTransform');
 
@@ -25,6 +25,7 @@ router.get(
 router.post(
   '/submit',
   authenticate,
+  requireEmailVerificationByRole,
   transformOnboardingData,
   validateOnboarding,
   onboardingController.submitAnswers

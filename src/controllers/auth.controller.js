@@ -118,6 +118,16 @@ class AuthController {
         });
       }
 
+      // Enforce email verification for employees (block login if not verified)
+      if (user.role === 'employee' && !user.isEmailVerified) {
+        return res.status(HTTP_STATUS.UNAUTHORIZED).json({
+          success: false,
+          message: 'Please verify your email address before logging in. Check your inbox for the verification link.',
+          requiresEmailVerification: true,
+          email: user.email
+        });
+      }
+
       // Verify password
       const isPasswordValid = await user.comparePassword(password);
       if (!isPasswordValid) {
@@ -137,12 +147,68 @@ class AuthController {
       // Save user with new refresh token
       await user.save();
 
-      // Prepare user data for response
+      // Prepare role-based user data for response
       const userResponse = user.toObject();
       delete userResponse.password;
       delete userResponse.refreshTokens;
       delete userResponse.emailVerificationToken;
       delete userResponse.passwordResetToken;
+
+      // Add role-specific permissions and capabilities
+      const permissions = {
+        canAccessEmployeeDashboard: user.role === 'employee',
+        canAccessHRDashboard: ['hr', 'admin'].includes(user.role),
+        canAccessAdminDashboard: user.role === 'admin',
+        canManageUsers: ['hr', 'admin'].includes(user.role),
+        canViewAnalytics: ['hr', 'admin'].includes(user.role),
+        canManageSystem: user.role === 'admin',
+        requiresCheckIn: user.role === 'employee',
+        requiresOnboarding: user.role === 'employee' && !user.onboarding.completed,
+        canSendMessages: ['hr', 'admin'].includes(user.role),
+        canManageRewards: ['hr', 'admin'].includes(user.role),
+        canViewTeamData: ['hr', 'admin'].includes(user.role) || (user.role === 'manager'),
+        canCreateSurveys: ['hr', 'admin'].includes(user.role),
+        canCreateChallenges: ['hr', 'admin'].includes(user.role)
+      };
+
+      // Account status and required actions
+      const accountStatus = {
+        needsEmailVerification: !user.isEmailVerified,
+        needsOnboarding: user.role === 'employee' && !user.onboarding.completed,
+        isFirstLogin: !user.lastLogin || (user.createdAt.getTime() === user.lastLogin.getTime()),
+        emailVerified: user.isEmailVerified,
+        onboardingCompleted: user.onboarding.completed
+      };
+
+      // Determine next required actions
+      const nextActions = [];
+      if (!user.isEmailVerified) {
+        nextActions.push({
+          action: 'VERIFY_EMAIL',
+          priority: 'high',
+          message: 'Please verify your email address to access all features',
+          redirectTo: '/verify-email',
+          blocking: user.role === 'employee' // Only blocking for employees
+        });
+      } else if (user.role === 'employee' && !user.onboarding.completed) {
+        nextActions.push({
+          action: 'COMPLETE_ONBOARDING',
+          priority: 'high',
+          message: 'Complete your wellness profile to get started',
+          redirectTo: '/onboarding',
+          blocking: true
+        });
+      }
+
+      // Role-specific dashboard recommendations
+      let recommendedDashboard = '/dashboard';
+      if (user.role === 'admin') {
+        recommendedDashboard = '/admin/dashboard';
+      } else if (user.role === 'hr') {
+        recommendedDashboard = '/hr/dashboard';
+      } else if (user.role === 'employee') {
+        recommendedDashboard = '/employee/dashboard';
+      }
 
       // Set cookie options
       const cookieOptions = {
@@ -163,8 +229,10 @@ class AuthController {
           accessToken,
           tokenType: 'Bearer',
           expiresIn: process.env.JWT_EXPIRE,
-          needsOnboarding: !user.onboarding.completed,
-          needsEmailVerification: !user.isEmailVerified
+          permissions,
+          accountStatus,
+          nextActions,
+          recommendedDashboard
         }
       });
 

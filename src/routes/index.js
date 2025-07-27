@@ -152,6 +152,17 @@ router.get('/', (req, res) => {
           'GET /api/whatsapp/status': 'Get WhatsApp service status (auth required)',
           'POST /api/whatsapp/test-template': 'Test template message (Development only)'
         },
+        users: {
+          'GET /api/users': 'Get all users with pagination and filtering (Admin only)',
+          'GET /api/users/departments': 'Get all departments list (Admin only)',
+          'GET /api/users/:id': 'Get user by ID with wellness stats (Admin only)',
+          'POST /api/users': 'Create new user (Admin only)',
+          'POST /api/users/bulk-action': 'Perform bulk actions on users (Admin only)',
+          'PUT /api/users/:id': 'Update user details (Admin only)',
+          'PATCH /api/users/:id/status': 'Toggle user active/inactive status (Admin only)',
+          'PATCH /api/users/:id/role': 'Update user role (Admin only)',
+          'DELETE /api/users/:id': 'Delete user (Admin only)'
+        },
         health: {
           'GET /health': 'Health check endpoint'
         }
@@ -186,7 +197,7 @@ router.use('/resources', resourceRoutes);
 router.use('/rewards', rewardRoutes);
 router.use('/whatsapp', whatsappRoutes);
 
-// Future routes will be added here:
-// router.use('/users', require('./user.routes'));
+// User management routes (Admin only)
+router.use('/users', require('./user.routes'));
 
 module.exports = router;

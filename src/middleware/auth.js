@@ -161,8 +161,41 @@ const requireEmailVerification = (req, res, next) => {
     return res.status(HTTP_STATUS.FORBIDDEN).json({
       success: false,
       message: 'Please verify your email address first',
-      code: 'EMAIL_NOT_VERIFIED'
+      code: 'EMAIL_NOT_VERIFIED',
+      redirectTo: '/verify-email'
     });
+  }
+
+  next();
+};
+
+// Role-specific email verification middleware (stricter for employees)
+const requireEmailVerificationByRole = (req, res, next) => {
+  if (!req.user) {
+    return res.status(HTTP_STATUS.UNAUTHORIZED).json({
+      success: false,
+      message: 'Authentication required'
+    });
+  }
+
+  // For employees, email verification is mandatory for most features
+  if (req.user.role === 'employee' && !req.user.isEmailVerified) {
+    return res.status(HTTP_STATUS.FORBIDDEN).json({
+      success: false,
+      message: 'Employees must verify their email address to access this feature',
+      code: 'EMAIL_NOT_VERIFIED',
+      redirectTo: '/verify-email',
+      blocking: true
+    });
+  }
+
+  // For HR and admin, email verification is recommended but not always blocking
+  if (['hr', 'admin'].includes(req.user.role) && !req.user.isEmailVerified) {
+    // Add warning but allow access
+    req.emailVerificationWarning = {
+      message: 'Consider verifying your email address for full access to all features',
+      redirectTo: '/verify-email'
+    };
   }
 
   next();
@@ -252,5 +285,6 @@ module.exports = {
   authorizeOwnerOrAdmin,
   requireOnboarding,
   requireEmailVerification,
+  requireEmailVerificationByRole,
   verifyRefreshToken
 };
