@@ -10,8 +10,8 @@ class WhatsAppService {
     this.webhookVerifyToken = process.env.WHATSAPP_WEBHOOK_VERIFY_TOKEN;
     this.businessAccountId = process.env.WHATSAPP_BUSINESS_ACCOUNT_ID;
     
-    // Test number for development
-    this.testPhoneNumber = process.env.NODE_ENV === 'development' ? '+15550267733' : null;
+    // Test number for development - use your verified Hong Kong number
+    this.testPhoneNumber = process.env.NODE_ENV === 'development' ? '+85256928497' : null;
     
     if (!this.accessToken || !this.phoneNumberId) {
       console.warn('⚠️  WhatsApp Service: Missing required environment variables');
@@ -53,7 +53,14 @@ class WhatsAppService {
       console.log(`✅ WhatsApp message sent to ${phoneNumber}`);
       return response.data;
     } catch (error) {
-      console.error('❌ WhatsApp send message error:', error.response?.data || error.message);
+      console.error('❌ WhatsApp send message error:', {
+        status: error.response?.status,
+        statusText: error.response?.statusText,
+        data: error.response?.data,
+        message: error.message,
+        phoneNumber: phoneNumber,
+        formattedNumber: this.formatPhoneNumber(phoneNumber)
+      });
       throw error;
     }
   }
@@ -338,9 +345,15 @@ Keep up the great work!`;
     // Remove all non-numeric characters
     let cleaned = phoneNumber.replace(/\D/g, '');
     
-    // Add country code if missing (default to US +1)
-    if (!cleaned.startsWith('1') && !cleaned.startsWith('852')) {
-      cleaned = '1' + cleaned;
+    // Handle Hong Kong numbers specifically
+    if (cleaned.startsWith('852')) {
+      return cleaned; // Already has Hong Kong country code
+    } else if (cleaned.length === 8 && /^[5-9]/.test(cleaned)) {
+      return '852' + cleaned; // Add Hong Kong country code for 8-digit numbers starting with 5-9
+    } else if (cleaned.startsWith('1') && cleaned.length === 11) {
+      return cleaned; // US number with country code
+    } else if (cleaned.length === 10 && !cleaned.startsWith('852')) {
+      return '1' + cleaned; // Default to US for 10-digit numbers
     }
     
     return cleaned;

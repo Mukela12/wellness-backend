@@ -3,6 +3,7 @@ const router = express.Router();
 const onboardingController = require('../controllers/onboarding.controller');
 const { authenticate } = require('../middleware/auth');
 const { validateOnboarding } = require('../middleware/validation');
+const transformOnboardingData = require('../middleware/onboardingTransform');
 
 /**
  * @route   GET /api/onboarding/questionnaire
@@ -24,6 +25,7 @@ router.get(
 router.post(
   '/submit',
   authenticate,
+  transformOnboardingData,
   validateOnboarding,
   onboardingController.submitAnswers
 );

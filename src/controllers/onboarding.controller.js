@@ -211,6 +211,15 @@ const onboardingController = {
       const { answers, sectionCompleted } = req.body;
       const userId = req.user.id;
 
+      // The transformOnboardingData middleware should have ensured answers exists
+      if (!answers || typeof answers !== 'object') {
+        return res.status(400).json({
+          success: false,
+          message: 'Answers object is required (middleware should have transformed this)',
+          received: { bodyKeys: Object.keys(req.body || {}) }
+        });
+      }
+
       // Validate answers against questionnaire structure
       const validationErrors = validateAnswers(answers);
       if (validationErrors.length > 0) {
@@ -318,6 +327,15 @@ const onboardingController = {
 // Helper function to validate answers
 function validateAnswers(answers) {
   const errors = [];
+  
+  // Ensure answers is an object
+  if (!answers || typeof answers !== 'object') {
+    errors.push({
+      field: 'answers',
+      message: 'Answers must be an object'
+    });
+    return errors;
+  }
   
   for (const [sectionKey, section] of Object.entries(ONBOARDING_QUESTIONS)) {
     for (const question of section.questions) {
@@ -495,3 +513,4 @@ function generateInitialInsights(answers) {
 }
 
 module.exports = onboardingController;
+module.exports.ONBOARDING_QUESTIONS = ONBOARDING_QUESTIONS;

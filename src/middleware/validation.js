@@ -188,14 +188,38 @@ const validateSurveyResponse = [
 
 // Onboarding validation
 const validateOnboarding = [
+  // Make answers optional since the transform middleware will create it
   body('answers')
+    .optional()
     .isObject()
     .withMessage('Answers must be an object'),
 
   body('sectionCompleted')
     .optional()
     .isString()
-    .withMessage('Section completed must be a string')
+    .withMessage('Section completed must be a string'),
+
+  // Custom validation to ensure we have either answers object or questionnaire fields
+  body().custom((value, { req }) => {
+    // If answers object exists, that's fine
+    if (req.body.answers && typeof req.body.answers === 'object') {
+      return true;
+    }
+
+    // Otherwise, check if we have questionnaire fields directly
+    const questionFields = ['ageRange', 'department', 'workType', 'currentStressLevel', 'sleepQuality', 
+                           'exerciseFrequency', 'workLifeBalance', 'wellnessGoals', 'reminderPreference', 
+                           'comfortSeeking', 'preferredActivities', 'bestReminderTime', 'previousSupport', 
+                           'additionalSupport'];
+    
+    const hasQuestionFields = questionFields.some(field => req.body[field] !== undefined);
+    
+    if (!hasQuestionFields) {
+      throw new Error('Either answers object or questionnaire fields are required');
+    }
+    
+    return true;
+  })
 ];
 
 // ID parameter validation
