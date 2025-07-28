@@ -184,11 +184,20 @@ const onboardingController = {
         });
       }
 
+      // Transform the questionnaire to match frontend expectations
+      const transformedQuestionnaire = {
+        sections: Object.keys(ONBOARDING_QUESTIONS).map(sectionKey => ({
+          id: sectionKey,
+          title: ONBOARDING_QUESTIONS[sectionKey].title,
+          questions: ONBOARDING_QUESTIONS[sectionKey].questions
+        }))
+      };
+
       res.json({
         success: true,
         message: 'Onboarding questionnaire retrieved successfully',
         data: {
-          questionnaire: ONBOARDING_QUESTIONS,
+          questionnaire: transformedQuestionnaire,
           progress: {
             completed: false,
             totalSections: Object.keys(ONBOARDING_QUESTIONS).length,

@@ -31,16 +31,16 @@ class EmailService {
   // Send welcome email after registration
   async sendWelcomeEmail(user) {
     const mailOptions = {
-      from: process.env.EMAIL_FROM || 'WellnessAI <noreply@wellnessai.com>',
+      from: process.env.EMAIL_FROM || 'WellifyAI <noreply@wellifyai.com>',
       to: user.email,
-      subject: '🌟 Welcome to WellnessAI - Your Journey to Better Wellbeing Starts Now!',
+      subject: 'Welcome to WellifyAI - Your Workplace Wellness Journey Begins',
       html: `
         <!DOCTYPE html>
         <html>
         <head>
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Welcome to WellnessAI</title>
+          <title>Welcome to WellifyAI</title>
           <style>
             body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
             .container { max-width: 600px; margin: 0 auto; padding: 20px; }
@@ -54,32 +54,32 @@ class EmailService {
         <body>
           <div class="container">
             <div class="header">
-              <h1 style="color: white; margin: 0;">Welcome to WellnessAI! 🌟</h1>
-              <p style="color: white; margin: 10px 0 0 0;">Your AI-powered wellness companion</p>
+              <h1 style="color: white; margin: 0;">Welcome to WellifyAI</h1>
+              <p style="color: white; margin: 10px 0 0 0;">Your AI-Powered Workplace Wellness Platform</p>
             </div>
             
             <div class="content">
-              <h2>Hi ${user.name}! 👋</h2>
+              <h2>Dear ${user.name},</h2>
               
-              <p>Welcome to WellnessAI! We're thrilled to have you join our community of employees who prioritize mental health and wellbeing in the workplace.</p>
+              <p>Welcome to WellifyAI. We are pleased to have you join our workplace wellness platform designed to support your mental health and overall wellbeing.</p>
               
               <div class="feature">
-                <h3>🎯 What's Next?</h3>
+                <h3>Getting Started</h3>
                 <p>Complete your onboarding questionnaire to get personalized wellness insights and start earning Happy Coins!</p>
               </div>
               
               <div class="feature">
-                <h3>📱 Daily Check-ins</h3>
+                <h3>Daily Wellness Check-ins</h3>
                 <p>Take 30 seconds each day to rate your mood and share how you're feeling. Your responses help us support you better.</p>
               </div>
               
               <div class="feature">
-                <h3>🪙 Happy Coins System</h3>
+                <h3>Rewards System</h3>
                 <p>Earn coins for daily check-ins, completing surveys, and engaging with wellness activities. Redeem them for awesome rewards!</p>
               </div>
               
               <div class="feature">
-                <h3>🤖 AI-Powered Insights</h3>
+                <h3>Personalized AI Insights</h3>
                 <p>Get personalized recommendations, mood analysis, and wellness tips tailored to your unique profile.</p>
               </div>
               
@@ -94,16 +94,16 @@ class EmailService {
                 <li>Department: ${user.department}</li>
               </ul>
               
-              <p>If you have any questions, our team is here to help. Just reply to this email!</p>
+              <p>If you have any questions, our support team is available to assist you. Please feel free to reply to this email.</p>
               
-              <p>Wishing you wellness and happiness,<br>
-              <strong>The WellnessAI Team</strong></p>
+              <p>Best regards,<br>
+              <strong>The WellifyAI Team</strong></p>
             </div>
             
             <div class="footer">
               <p style="margin: 0; color: #666;">
                 This email was sent to ${user.email}<br>
-                WellnessAI Platform | Building healthier workplaces with AI
+                WellifyAI | Empowering Workplace Wellness Through AI
               </p>
             </div>
           </div>
@@ -127,9 +127,9 @@ class EmailService {
     const verificationUrl = `${process.env.CLIENT_URL}/verify-email?token=${verificationToken}`;
     
     const mailOptions = {
-      from: process.env.EMAIL_FROM || 'WellnessAI <noreply@wellnessai.com>',
+      from: process.env.EMAIL_FROM || 'WellifyAI <noreply@wellifyai.com>',
       to: user.email,
-      subject: '📧 Verify Your WellnessAI Email Address',
+      subject: 'Please Verify Your WellifyAI Email Address',
       html: `
         <!DOCTYPE html>
         <html>
@@ -150,13 +150,13 @@ class EmailService {
         <body>
           <div class="container">
             <div class="header">
-              <h1 style="color: white; margin: 0;">Verify Your Email 📧</h1>
+              <h1 style="color: white; margin: 0;">Email Verification Required</h1>
             </div>
             
             <div class="content">
-              <h2>Hi ${user.name}!</h2>
+              <h2>Dear ${user.name},</h2>
               
-              <p>Thank you for registering with WellnessAI! To complete your account setup and start your wellness journey, please verify your email address.</p>
+              <p>Thank you for registering with WellifyAI. To complete your account setup and access all platform features, please verify your email address.</p>
               
               <p style="text-align: center;">
                 <a href="${verificationUrl}" class="btn">Verify Email Address</a>
@@ -166,8 +166,8 @@ class EmailService {
               <p style="word-break: break-all; background: #f8f9fa; padding: 10px; border-radius: 4px;">${verificationUrl}</p>
               
               <div class="security-note">
-                <strong>⚠️ Security Note:</strong><br>
-                This verification link will expire in 24 hours for your security. If you didn't create a WellnessAI account, please ignore this email.
+                <strong>Security Notice:</strong><br>
+                This verification link will expire in 24 hours for your security. If you did not create a WellifyAI account, please disregard this email.
               </div>
               
               <p>Once verified, you'll be able to:</p>
@@ -178,16 +178,16 @@ class EmailService {
                 <li>Access AI-powered wellness insights</li>
               </ul>
               
-              <p>Need help? Just reply to this email and our team will assist you.</p>
+              <p>Need assistance? Please reply to this email and our support team will be happy to help.</p>
               
-              <p>Best regards,<br>
-              <strong>The WellnessAI Team</strong></p>
+              <p>Sincerely,<br>
+              <strong>The WellifyAI Team</strong></p>
             </div>
             
             <div class="footer">
               <p style="margin: 0; color: #666;">
                 This email was sent to ${user.email}<br>
-                WellnessAI Platform | Secure. Private. Focused on your wellbeing.
+                WellifyAI | Secure. Private. Focused on Your Wellbeing.
               </p>
             </div>
           </div>
@@ -211,9 +211,9 @@ class EmailService {
     const resetUrl = `${process.env.CLIENT_URL}/reset-password?token=${resetToken}`;
     
     const mailOptions = {
-      from: process.env.EMAIL_FROM || 'WellnessAI <noreply@wellnessai.com>',
+      from: process.env.EMAIL_FROM || 'WellifyAI <noreply@wellifyai.com>',
       to: user.email,
-      subject: '🔒 Reset Your WellnessAI Password',
+      subject: 'Password Reset Request - WellifyAI',
       html: `
         <!DOCTYPE html>
         <html>
@@ -234,13 +234,13 @@ class EmailService {
         <body>
           <div class="container">
             <div class="header">
-              <h1 style="color: white; margin: 0;">Password Reset Request 🔒</h1>
+              <h1 style="color: white; margin: 0;">Password Reset Request</h1>
             </div>
             
             <div class="content">
-              <h2>Hi ${user.name}!</h2>
+              <h2>Dear ${user.name},</h2>
               
-              <p>We received a request to reset your WellnessAI password. If you made this request, click the button below to create a new password.</p>
+              <p>We received a request to reset your WellifyAI account password. If you initiated this request, please click the button below to create a new password.</p>
               
               <p style="text-align: center;">
                 <a href="${resetUrl}" class="btn">Reset Password</a>
@@ -250,26 +250,26 @@ class EmailService {
               <p style="word-break: break-all; background: #f8f9fa; padding: 10px; border-radius: 4px;">${resetUrl}</p>
               
               <div class="warning">
-                <strong>⚠️ Important Security Information:</strong><br>
+                <strong>Important Security Information:</strong><br>
                 • This reset link expires in 10 minutes<br>
-                • If you didn't request this reset, please ignore this email<br>
-                • Your password won't change unless you click the link above<br>
-                • For security, this link can only be used once
+                • If you did not request this reset, please ignore this email<br>
+                • Your password will not change unless you click the link above<br>
+                • For security purposes, this link can only be used once
               </div>
               
-              <p><strong>Didn't request a password reset?</strong><br>
-              Your account is safe. Someone might have typed your email address by mistake. You can safely ignore this email.</p>
+              <p><strong>Did not request a password reset?</strong><br>
+              Your account remains secure. Someone may have entered your email address by mistake. You can safely disregard this email.</p>
               
-              <p>For additional security questions, contact our support team by replying to this email.</p>
+              <p>For additional security questions, please contact our support team by replying to this email.</p>
               
-              <p>Stay secure,<br>
-              <strong>The WellnessAI Security Team</strong></p>
+              <p>Regards,<br>
+              <strong>The WellifyAI Security Team</strong></p>
             </div>
             
             <div class="footer">
               <p style="margin: 0; color: #666;">
                 This email was sent to ${user.email}<br>
-                WellnessAI Platform | Your privacy and security are our priority
+                WellifyAI | Your Privacy and Security Are Our Priority
               </p>
             </div>
           </div>
@@ -291,9 +291,9 @@ class EmailService {
   // Send daily check-in reminder
   async sendCheckInReminder(user) {
     const mailOptions = {
-      from: process.env.EMAIL_FROM || 'WellnessAI <noreply@wellnessai.com>',
+      from: process.env.EMAIL_FROM || 'WellifyAI <noreply@wellifyai.com>',
       to: user.email,
-      subject: '🌟 Your Daily Wellness Check-in Awaits!',
+      subject: 'Daily Wellness Check-in Reminder - WellifyAI',
       html: `
         <!DOCTYPE html>
         <html>
@@ -314,18 +314,18 @@ class EmailService {
         <body>
           <div class="container">
             <div class="header">
-              <h1 style="color: white; margin: 0;">Daily Check-in Time! 🌟</h1>
+              <h1 style="color: white; margin: 0;">Time for Your Daily Check-in</h1>
             </div>
             
             <div class="content">
-              <h2>Good morning, ${user.name}! ☀️</h2>
+              <h2>Good morning, ${user.name},</h2>
               
               <p>Take a moment to reflect on your wellbeing. Your daily check-in helps us support you better and keeps you connected to your wellness journey.</p>
               
               ${user.wellness.currentStreak > 0 ? `
               <div class="streak">
-                <h3 style="margin: 0; color: #2d5a2d;">🔥 Current Streak: ${user.wellness.currentStreak} days!</h3>
-                <p style="margin: 5px 0 0 0;">Keep it going! You're doing amazing!</p>
+                <h3 style="margin: 0; color: #2d5a2d;">Current Streak: ${user.wellness.currentStreak} days</h3>
+                <p style="margin: 5px 0 0 0;">Excellent consistency. Keep up the great work!</p>
               </div>
               ` : ''}
               
@@ -333,16 +333,16 @@ class EmailService {
                 <a href="${process.env.CLIENT_URL}/checkin" class="btn">Start Check-in (30 seconds)</a>
               </p>
               
-              <p><strong>💰 Earn ${process.env.DAILY_CHECKIN_COINS || 50} Happy Coins</strong> for completing today's check-in!</p>
+              <p><strong>Earn ${process.env.DAILY_CHECKIN_COINS || 50} Happy Coins</strong> for completing today's check-in.</p>
               
               <p style="font-size: 14px; color: #666;">
-                <em>This gentle reminder helps you stay consistent with your wellness goals. You can adjust notification preferences in your account settings.</em>
+                <em>This daily reminder helps maintain consistency with your wellness goals. Notification preferences can be adjusted in your account settings.</em>
               </p>
             </div>
             
             <div class="footer">
               <p style="margin: 0; color: #666; font-size: 12px;">
-                WellnessAI | Supporting your daily wellness journey
+                WellifyAI | Supporting Your Daily Wellness Journey
               </p>
             </div>
           </div>
