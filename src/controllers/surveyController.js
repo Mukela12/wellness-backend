@@ -2,6 +2,7 @@ const Survey = require('../models/Survey');
 const User = require('../models/User');
 const { sendSuccessResponse, sendErrorResponse } = require('../utils/responseUtils');
 const mongoose = require('mongoose');
+const achievementService = require('../services/achievement.service');
 
 const surveyController = {
   async createSurvey(req, res) {
@@ -227,6 +228,19 @@ const surveyController = {
         user.wellness.happyCoins += survey.rewards.happyCoins;
         await user.save();
       }
+
+      // Check achievements for survey completion in background
+      setImmediate(async () => {
+        try {
+          await achievementService.checkAndAwardAchievements(
+            userId,
+            'survey_completion',
+            { survey, user }
+          );
+        } catch (error) {
+          console.error('Error checking achievements after survey completion:', error);
+        }
+      });
 
       sendSuccessResponse(res, {
         message: 'Survey response submitted successfully',

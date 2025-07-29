@@ -26,7 +26,8 @@ const resourceController = {
         attachments,
         language,
         accessibility,
-        expiryDate
+        expiryDate,
+        status
       } = req.body;
 
       const resource = new Resource({
@@ -50,6 +51,7 @@ const resourceController = {
         language,
         accessibility,
         expiryDate,
+        status,
         createdBy: req.user.id
       });
 
@@ -697,6 +699,104 @@ const resourceController = {
     } catch (error) {
       console.error('Error fetching resource categories:', error);
       sendErrorResponse(res, 'Failed to fetch resource categories', 500);
+    }
+  },
+
+  async getUserFavorites(req, res) {
+    try {
+      const favorites = await ResourceInteraction.find({
+        userId: req.user.id,
+        'interactions.bookmarked': true
+      })
+      .populate({
+        path: 'resourceId',
+        select: 'title type category readingTime analytics status description isPublic targetAudience',
+        match: { status: 'published' }
+      })
+      .sort({ lastAccessedAt: -1 });
+
+      const filteredFavorites = favorites.filter(favorite =>
+        favorite.resourceId && favorite.resourceId.hasUserAccess(req.user)
+      );
+
+      sendSuccessResponse(res, {
+        message: 'User favorites retrieved successfully',
+        data: {
+          favorites: filteredFavorites,
+          count: filteredFavorites.length
+        }
+      });
+    } catch (error) {
+      console.error('Error fetching user favorites:', error);
+      sendErrorResponse(res, 'Failed to fetch user favorites', 500);
+    }
+  },
+
+  async addToFavorites(req, res) {
+    try {
+      const { id } = req.params;
+
+      const resource = await Resource.findById(id);
+      if (!resource) {
+        return sendErrorResponse(res, 'Resource not found', 404);
+      }
+
+      if (!resource.hasUserAccess(req.user)) {
+        return sendErrorResponse(res, 'Access denied', 403);
+      }
+
+      let interaction = await ResourceInteraction.findOne({
+        userId: req.user.id,
+        resourceId: id
+      });
+
+      if (!interaction) {
+        interaction = new ResourceInteraction({
+          userId: req.user.id,
+          resourceId: id,
+          interactions: { bookmarked: true }
+        });
+      } else {
+        interaction.interactions.bookmarked = true;
+      }
+
+      interaction.lastAccessedAt = new Date();
+      await interaction.save();
+
+      sendSuccessResponse(res, {
+        message: 'Resource added to favorites successfully',
+        data: { interaction }
+      });
+    } catch (error) {
+      console.error('Error adding to favorites:', error);
+      sendErrorResponse(res, 'Failed to add to favorites', 500);
+    }
+  },
+
+  async removeFromFavorites(req, res) {
+    try {
+      const { id } = req.params;
+
+      const interaction = await ResourceInteraction.findOne({
+        userId: req.user.id,
+        resourceId: id
+      });
+
+      if (!interaction) {
+        return sendErrorResponse(res, 'Favorite not found', 404);
+      }
+
+      interaction.interactions.bookmarked = false;
+      interaction.lastAccessedAt = new Date();
+      await interaction.save();
+
+      sendSuccessResponse(res, {
+        message: 'Resource removed from favorites successfully',
+        data: { interaction }
+      });
+    } catch (error) {
+      console.error('Error removing from favorites:', error);
+      sendErrorResponse(res, 'Failed to remove from favorites', 500);
     }
   }
 };

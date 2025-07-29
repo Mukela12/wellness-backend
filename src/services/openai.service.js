@@ -405,6 +405,411 @@ Respond in valid JSON format only:
       return null;
     }
   }
+
+  // =============================================================================
+  // JOURNALING AI METHODS
+  // =============================================================================
+
+  // Generate personalized journal prompts
+  async generateJournalPrompts(promptData) {
+    if (!this.isEnabled) {
+      return null;
+    }
+
+    try {
+      const {
+        user,
+        promptType = 'reflection',
+        currentMood,
+        recentMoods = [],
+        riskLevel = 'low',
+        recentThemes = [],
+        count = 3
+      } = promptData;
+
+      const prompt = `
+You are a wellness AI assistant generating personalized journal prompts for an employee.
+
+Employee Context:
+- Department: ${user.department || 'Unknown'}
+- Current Mood: ${currentMood}/5
+- Recent Moods: ${recentMoods.join(', ') || 'No recent data'}
+- Risk Level: ${riskLevel}
+- Recent Journal Themes: ${recentThemes.join(', ') || 'None'}
+- Prompt Type: ${promptType}
+
+Generate ${count} personalized, thoughtful journal prompts that:
+1. Match the requested prompt type (${promptType})
+2. Are appropriate for the user's current mood and situation
+3. Encourage meaningful self-reflection
+4. Are engaging and not repetitive
+5. Consider the user's context and recent patterns
+
+Prompt Types:
+- reflection: Self-examination and introspection
+- gratitude: Appreciation and thankfulness
+- goal-setting: Future planning and aspirations
+- stress-relief: Coping and relaxation
+- mindfulness: Present-moment awareness
+- creativity: Imagination and expression
+- growth: Learning and development
+- challenge: Overcoming obstacles
+
+Respond in valid JSON format only:
+{
+  "prompts": [
+    {
+      "id": "unique_id",
+      "text": "The prompt text here",
+      "category": "${promptType}",
+      "difficulty": "easy|medium|deep",
+      "estimatedTime": "5-10 minutes",
+      "tags": ["tag1", "tag2"],
+      "moodAppropriate": [1,2,3,4,5]
+    }
+  ],
+  "personalizationNote": "Brief explanation of how these were personalized"
+}`;
+
+      const response = await this.client.chat.completions.create({
+        model: this.model,
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a wellness AI assistant specializing in journaling. Create thoughtful, engaging prompts that encourage meaningful reflection.'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        max_tokens: this.maxTokens,
+        temperature: 0.8 // Higher temperature for creative prompts
+      });
+
+      const content = response.choices[0]?.message?.content?.trim();
+      
+      try {
+        const result = JSON.parse(content);
+        return {
+          ...result,
+          usage: response.usage,
+          generatedAt: new Date(),
+          basedOnMood: currentMood,
+          promptType
+        };
+      } catch (parseError) {
+        console.error('Failed to parse journal prompts:', content);
+        return null;
+      }
+    } catch (error) {
+      console.error('Journal prompt generation failed:', error.message);
+      return null;
+    }
+  }
+
+  // Analyze journal entry for insights
+  async analyzeJournalEntry(journalData) {
+    if (!this.isEnabled) {
+      return null;
+    }
+
+    try {
+      const { title, content, mood, category, user } = journalData;
+
+      const prompt = `
+You are a wellness AI assistant analyzing a journal entry for insights and patterns.
+
+Journal Entry:
+- Title: "${title}"
+- Content: "${content}"
+- Mood When Written: ${mood}/5
+- Category: ${category}
+- Word Count: ${content.split(' ').length}
+
+User Context:
+- Department: ${user.department || 'Unknown'}
+- Current Risk Level: ${user.wellness?.riskLevel || 'unknown'}
+
+Analyze this journal entry and provide:
+1. Sentiment analysis (-1 to 1 scale)
+2. Key emotions detected
+3. Main themes and topics
+4. Personal insights and patterns
+5. Recommendations for follow-up reflection
+6. Any wellness concerns or positive indicators
+
+Respond in valid JSON format only:
+{
+  "sentimentScore": number_between_-1_and_1,
+  "emotions": [
+    {
+      "emotion": "emotion_name",
+      "intensity": number_between_0_and_1,
+      "confidence": number_between_0_and_1
+    }
+  ],
+  "keyThemes": ["theme1", "theme2", "theme3"],
+  "insights": [
+    {
+      "type": "pattern|strength|concern|growth",
+      "description": "insight description",
+      "confidence": number_between_0_and_1
+    }
+  ],
+  "recommendations": [
+    {
+      "type": "reflection|action|resource",
+      "suggestion": "specific recommendation",
+      "priority": "high|medium|low"
+    }
+  ],
+  "wellnessIndicators": {
+    "positive": ["indicator1", "indicator2"],
+    "concerns": ["concern1"],
+    "overall": "positive|neutral|concerning"
+  },
+  "followUpPrompts": ["prompt1", "prompt2"]
+}`;
+
+      const response = await this.client.chat.completions.create({
+        model: this.model,
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a professional wellness AI assistant analyzing journal entries. Be thorough, empathetic, and provide actionable insights.'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        max_tokens: this.maxTokens,
+        temperature: 0.4 // Moderate temperature for consistent analysis
+      });
+
+      const analysisContent = response.choices[0]?.message?.content?.trim();
+      
+      try {
+        const analysis = JSON.parse(analysisContent);
+        return {
+          ...analysis,
+          usage: response.usage,
+          analyzedAt: new Date(),
+          entryMood: mood,
+          entryCategory: category
+        };
+      } catch (parseError) {
+        console.error('Failed to parse journal analysis:', analysisContent);
+        return null;
+      }
+    } catch (error) {
+      console.error('Journal entry analysis failed:', error.message);
+      return null;
+    }
+  }
+
+  // Generate insights from multiple journal entries
+  async generateJournalInsights(journalEntries) {
+    if (!this.isEnabled) {
+      return null;
+    }
+
+    try {
+      const entriesSummary = journalEntries.map(entry => ({
+        date: entry.createdAt.toISOString().split('T')[0],
+        mood: entry.mood,
+        category: entry.category,
+        wordCount: entry.wordCount,
+        themes: entry.aiInsights?.keyThemes || [],
+        contentSample: entry.content.substring(0, 200) + '...'
+      }));
+
+      const prompt = `
+You are a wellness AI assistant analyzing multiple journal entries to identify patterns and generate comprehensive insights.
+
+Journal Entries Summary (${journalEntries.length} entries):
+${entriesSummary.map(entry => 
+  `Date: ${entry.date}, Mood: ${entry.mood}/5, Category: ${entry.category}, Words: ${entry.wordCount}
+  Sample: "${entry.contentSample}"`
+).join('\n\n')}
+
+Analyze these journal entries and provide:
+1. Overall patterns and trends
+2. Mood progression analysis
+3. Recurring themes and topics
+4. Personal growth indicators
+5. Areas of concern or strength
+6. Recommendations for continued journaling
+7. Insights about writing habits and consistency
+
+Respond in valid JSON format only:
+{
+  "overallSummary": "comprehensive summary of the journal entries",
+  "patterns": {
+    "moodTrends": "description of mood patterns",
+    "recurringThemes": ["theme1", "theme2", "theme3"],
+    "writingStyle": "analysis of writing patterns",
+    "consistency": "assessment of journaling frequency and quality"
+  },
+  "insights": [
+    {
+      "category": "growth|concern|strength|pattern",
+      "title": "insight title",
+      "description": "detailed description",
+      "evidence": ["supporting evidence"],
+      "significance": "high|medium|low"
+    }
+  ],
+  "recommendations": {
+    "immediate": ["recommendation1", "recommendation2"],
+    "ongoing": ["recommendation1", "recommendation2"],
+    "resources": ["resource1", "resource2"]
+  },
+  "wellnessAssessment": {
+    "overallTrend": "improving|stable|declining",
+    "keyStrengths": ["strength1", "strength2"],
+    "areasForGrowth": ["area1", "area2"],
+    "riskIndicators": ["indicator1"] or []
+  },
+  "motivationalMessage": "encouraging message based on the analysis"
+}`;
+
+      const response = await this.client.chat.completions.create({
+        model: this.model,
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a professional wellness AI assistant providing comprehensive journal insights. Be thorough, supportive, and focus on actionable patterns and recommendations.'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        max_tokens: this.maxTokens * 1.5, // More tokens for comprehensive analysis
+        temperature: 0.5
+      });
+
+      const insightsContent = response.choices[0]?.message?.content?.trim();
+      
+      try {
+        const insights = JSON.parse(insightsContent);
+        return {
+          ...insights,
+          usage: response.usage,
+          generatedAt: new Date(),
+          entriesAnalyzed: journalEntries.length,
+          analysisTimeframe: {
+            startDate: journalEntries[journalEntries.length - 1]?.createdAt,
+            endDate: journalEntries[0]?.createdAt
+          }
+        };
+      } catch (parseError) {
+        console.error('Failed to parse journal insights:', insightsContent);
+        return null;
+      }
+    } catch (error) {
+      console.error('Journal insights generation failed:', error.message);
+      return null;
+    }
+  }
+
+  // Generate personalized daily motivational quotes
+  async generateDailyQuote(quoteData) {
+    if (!this.isEnabled) {
+      return null;
+    }
+
+    try {
+      const {
+        user,
+        currentMood,
+        recentMoods = [],
+        riskLevel = 'low',
+        recentThemes = [],
+        previousQuotes = []
+      } = quoteData;
+
+      const prompt = `
+You are a wellness AI assistant generating a personalized daily motivational quote for an employee.
+
+Employee Context:
+- Name: ${user.name || 'Employee'}
+- Department: ${user.department || 'Unknown'}
+- Current Mood: ${currentMood}/5
+- Recent Moods (last 7 days): ${recentMoods.join(', ') || 'No recent data'}
+- Risk Level: ${riskLevel}
+- Recent Focus Areas: ${recentThemes.join(', ') || 'General wellness'}
+
+Previous Quotes (to avoid repetition):
+${previousQuotes.map(q => `"${q.quote}" - ${q.author}`).join('\n') || 'None'}
+
+Generate a personalized motivational quote that:
+1. Is appropriate for their current mood and situation
+2. Addresses their risk level (higher support for higher risk)
+3. Is not repetitive of previous quotes
+4. Is genuinely inspiring and actionable
+5. Feels personal and relevant
+6. Is professional and workplace-appropriate
+
+Consider these guidelines:
+- Low risk + good mood: Encouraging continued growth
+- Low risk + neutral mood: Gentle motivation
+- Low risk + low mood: Supportive and uplifting
+- Medium/High risk: Extra supportive, focusing on strength and resilience
+
+Respond in valid JSON format only:
+{
+  "quote": "The motivational quote text",
+  "author": "Real or attributed author name",
+  "category": "motivation|resilience|growth|wellness|mindfulness|strength",
+  "personalization": {
+    "moodMatch": "explanation of how it matches their mood",
+    "relevance": "why this quote is relevant to their situation",
+    "intention": "what this quote is meant to achieve"
+  },
+  "actionPrompt": "A brief suggestion of how to apply this quote today",
+  "tags": ["tag1", "tag2", "tag3"]
+}`;
+
+      const response = await this.client.chat.completions.create({
+        model: this.model,
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a wellness AI assistant creating personalized daily motivational quotes. Be inspiring, genuine, and appropriately supportive based on the user\'s current state.'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        max_tokens: 400,
+        temperature: 0.8 // Higher temperature for creative quote generation
+      });
+
+      const quoteContent = response.choices[0]?.message?.content?.trim();
+      
+      try {
+        const quoteResult = JSON.parse(quoteContent);
+        return {
+          ...quoteResult,
+          usage: response.usage,
+          generatedAt: new Date(),
+          basedOnMood: currentMood,
+          basedOnRisk: riskLevel,
+          date: new Date().toISOString().split('T')[0]
+        };
+      } catch (parseError) {
+        console.error('Failed to parse daily quote:', quoteContent);
+        return null;
+      }
+    } catch (error) {
+      console.error('Daily quote generation failed:', error.message);
+      return null;
+    }
+  }
 }
 
 module.exports = new OpenAIService();

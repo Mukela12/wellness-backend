@@ -14,13 +14,13 @@ router.get('/my-challenges', challengeController.getUserChallenges);
 
 router.get('/', challengeController.getAllChallenges);
 
-router.post('/', authorize(['hr', 'admin', 'manager']), validateChallenge, challengeController.createChallenge);
+router.post('/', authorize(['hr', 'admin']), validateChallenge, challengeController.createChallenge);
 
 router.get('/:id', challengeController.getChallenge);
 
-router.put('/:id', authorize(['hr', 'admin', 'manager']), challengeController.updateChallenge);
+router.put('/:id', authorize(['hr', 'admin']), challengeController.updateChallenge);
 
-router.delete('/:id', authorize(['hr', 'admin', 'manager']), challengeController.deleteChallenge);
+router.delete('/:id', authorize(['hr', 'admin']), challengeController.deleteChallenge);
 
 router.post('/:id/join', challengeController.joinChallenge);
 
@@ -30,8 +30,8 @@ router.post('/:id/progress', validateChallengeProgress, challengeController.upda
 
 router.get('/:id/leaderboard', challengeController.getLeaderboard);
 
-router.get('/:id/analytics', authorize(['hr', 'admin', 'manager']), challengeController.getChallengeAnalytics);
+router.get('/:id/analytics', authorize(['hr', 'admin']), challengeController.getChallengeAnalytics);
 
-router.patch('/:id/status', authorize(['hr', 'admin', 'manager']), challengeController.updateChallengeStatus);
+router.patch('/:id/status', authorize(['hr', 'admin']), challengeController.updateChallengeStatus);
 
 module.exports = router;

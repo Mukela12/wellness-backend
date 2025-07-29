@@ -220,35 +220,10 @@ userSchema.pre('save', async function(next) {
   }
 });
 
-// Update streak before saving check-in
+// Update streak before saving check-in (now handled in CheckIn post-save middleware)
 userSchema.pre('save', function(next) {
-  if (this.isModified('wellness.lastCheckIn') && this.wellness.lastCheckIn) {
-    const today = new Date();
-    const yesterday = new Date(today);
-    yesterday.setDate(yesterday.getDate() - 1);
-    
-    const lastCheckin = new Date(this.wellness.lastCheckIn);
-    
-    // Check if last check-in was yesterday (continuing streak)
-    if (lastCheckin.toDateString() === yesterday.toDateString()) {
-      this.wellness.currentStreak += 1;
-    } 
-    // Check if last check-in was today (same day, don't increment)
-    else if (lastCheckin.toDateString() === today.toDateString()) {
-      // Keep current streak
-    }
-    // Otherwise, reset streak
-    else {
-      this.wellness.currentStreak = 1;
-    }
-    
-    // Update longest streak if current is higher
-    this.wellness.longestStreak = Math.max(
-      this.wellness.currentStreak, 
-      this.wellness.longestStreak || 0
-    );
-  }
-  
+  // Streak calculation is now handled in CheckIn model post-save middleware
+  // to avoid timing issues with the controller response
   next();
 });
 

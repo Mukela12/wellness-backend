@@ -114,8 +114,17 @@ const validateProfileUpdate = [
 
   body('phone')
     .optional()
-    .isMobilePhone()
-    .withMessage('Please provide a valid phone number'),
+    .custom((value) => {
+      if (!value || value.trim() === '') {
+        return true; // Allow empty phone numbers
+      }
+      // Basic phone number validation - more flexible than isMobilePhone()
+      const phoneRegex = /^[\+]?[0-9\s\-\(\)]{7,15}$/;
+      if (!phoneRegex.test(value)) {
+        throw new Error('Please provide a valid phone number (7-15 digits)');
+      }
+      return true;
+    }),
 
   body('department')
     .optional()

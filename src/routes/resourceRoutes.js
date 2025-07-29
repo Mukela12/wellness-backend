@@ -14,22 +14,28 @@ router.get('/popular', resourceController.getPopularResources);
 
 router.get('/my-history', resourceController.getUserResourceHistory);
 
+router.get('/favorites', resourceController.getUserFavorites);
+
 router.get('/category/:category', resourceController.getResourcesByCategory);
 
 router.get('/', resourceController.getAllResources);
 
-router.post('/', authorize(['hr', 'admin', 'manager']), validateResource, resourceController.createResource);
+router.post('/', authorize(['admin']), validateResource, resourceController.createResource);
 
 router.get('/:id', resourceController.getResource);
 
-router.put('/:id', authorize(['hr', 'admin', 'manager']), resourceController.updateResource);
+router.put('/:id', authorize(['admin']), resourceController.updateResource);
 
-router.delete('/:id', authorize(['hr', 'admin', 'manager']), resourceController.deleteResource);
+router.delete('/:id', authorize(['admin']), resourceController.deleteResource);
 
 router.post('/:id/interact', validateResourceInteraction, resourceController.interactWithResource);
 
-router.get('/:id/analytics', authorize(['hr', 'admin', 'manager']), resourceController.getResourceAnalytics);
+router.post('/:id/favorite', resourceController.addToFavorites);
 
-router.patch('/:id/status', authorize(['hr', 'admin', 'manager']), resourceController.updateResourceStatus);
+router.delete('/:id/favorite', resourceController.removeFromFavorites);
+
+router.get('/:id/analytics', authorize(['admin']), resourceController.getResourceAnalytics);
+
+router.patch('/:id/status', authorize(['admin']), resourceController.updateResourceStatus);
 
 module.exports = router;

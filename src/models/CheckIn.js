@@ -202,11 +202,45 @@ checkInSchema.post('save', async function(doc) {
     
     if (!user) return;
 
+    // Store previous lastCheckIn for streak calculation
+    const previousLastCheckIn = user.wellness.lastCheckIn;
+
     // Update happy coins
     user.wellness.happyCoins += doc.happyCoinsEarned;
     
     // Update last check-in date
     user.wellness.lastCheckIn = new Date();
+    
+    // Update streak manually here instead of relying on pre-save hook
+    const today = new Date();
+    const yesterday = new Date(today);
+    yesterday.setDate(yesterday.getDate() - 1);
+    
+    if (!previousLastCheckIn) {
+      // First check-in ever
+      user.wellness.currentStreak = 1;
+    } else {
+      const prevCheckInDate = new Date(previousLastCheckIn);
+      
+      // Check if previous check-in was yesterday (continuing streak)
+      if (prevCheckInDate.toDateString() === yesterday.toDateString()) {
+        user.wellness.currentStreak += 1;
+      } 
+      // Check if previous check-in was today (same day, don't increment)
+      else if (prevCheckInDate.toDateString() === today.toDateString()) {
+        // Keep current streak (shouldn't happen due to daily check-in limit)
+      }
+      // Otherwise, reset streak to 1
+      else {
+        user.wellness.currentStreak = 1;
+      }
+    }
+    
+    // Update longest streak if current is higher
+    user.wellness.longestStreak = Math.max(
+      user.wellness.currentStreak, 
+      user.wellness.longestStreak || 0
+    );
     
     // Calculate and update average mood
     const recentCheckIns = await this.constructor.find({
@@ -219,7 +253,7 @@ checkInSchema.post('save', async function(doc) {
       user.wellness.averageMood = Math.round((totalMood / recentCheckIns.length) * 10) / 10;
     }
 
-    // Update streak (this is handled in User model pre-save)
+    // Save without triggering the pre-save hook for streak calculation
     await user.save();
     
   } catch (error) {

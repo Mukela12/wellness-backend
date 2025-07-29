@@ -14,7 +14,7 @@ class ProfileController {
         });
       }
 
-      const userId = req.user.id;
+      const userId = req.user._id;
       const updates = {};
       
       const allowedUpdates = ['name', 'phone', 'department'];
@@ -83,7 +83,7 @@ class ProfileController {
         });
       }
 
-      const userId = req.user.id;
+      const userId = req.user._id;
       const { notifications, personality } = req.body;
       
       const updates = { updatedAt: new Date() };
@@ -202,7 +202,7 @@ class ProfileController {
 
   async getWellnessStats(req, res) {
     try {
-      const userId = req.user.id;
+      const userId = req.user._id;
       const { period = '30' } = req.query;
       
       const days = parseInt(period);

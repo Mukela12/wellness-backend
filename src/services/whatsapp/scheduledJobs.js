@@ -2,6 +2,7 @@ const cron = require('node-cron');
 const whatsappService = require('./whatsapp.service');
 const User = require('../../models/User');
 const CheckIn = require('../../models/CheckIn');
+const streakWarningService = require('../notifications/streakWarning.service');
 
 class WhatsAppScheduledJobs {
   constructor() {
@@ -33,6 +34,22 @@ class WhatsAppScheduledJobs {
         timezone: "UTC"
       });
 
+      // Streak warning notifications at 6 PM daily
+      const streakWarningJob = cron.schedule('0 18 * * *', async () => {
+        await this.sendStreakWarnings();
+      }, {
+        scheduled: false,
+        timezone: "UTC"
+      });
+
+      // Streak loss recovery notifications at 8 AM daily
+      const streakRecoveryJob = cron.schedule('0 8 * * *', async () => {
+        await this.sendStreakRecoveryNotifications();
+      }, {
+        scheduled: false,
+        timezone: "UTC"
+      });
+
       // Test job every 5 minutes (development only)
       let testJob = null;
       if (process.env.NODE_ENV === 'development') {
@@ -47,6 +64,8 @@ class WhatsAppScheduledJobs {
       // Store jobs for management
       this.jobs.set('dailyReminder', dailyReminderJob);
       this.jobs.set('weeklyReport', weeklyReportJob);
+      this.jobs.set('streakWarning', streakWarningJob);
+      this.jobs.set('streakRecovery', streakRecoveryJob);
       if (testJob) this.jobs.set('test', testJob);
 
       // Start all jobs
@@ -235,6 +254,28 @@ class WhatsAppScheduledJobs {
     } catch (error) {
       console.error('❌ Test reminder failed:', error);
       throw error;
+    }
+  }
+
+  // Send streak warning notifications
+  async sendStreakWarnings() {
+    try {
+      console.log('🔥 Starting streak warning notifications...');
+      const result = await streakWarningService.sendStreakWarnings();
+      console.log(`🔥 Streak warnings completed: ${result.warningsSent} sent, ${result.errors} errors`);
+    } catch (error) {
+      console.error('❌ Error sending streak warnings:', error);
+    }
+  }
+
+  // Send streak recovery notifications for users who lost their streak
+  async sendStreakRecoveryNotifications() {
+    try {
+      console.log('💪 Starting streak recovery notifications...');
+      const result = await streakWarningService.sendStreakLossNotifications();
+      console.log(`💪 Streak recovery notifications completed: ${result.motivationsSent} sent, ${result.errors} errors`);
+    } catch (error) {
+      console.error('❌ Error sending streak recovery notifications:', error);
     }
   }
 

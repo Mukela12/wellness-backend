@@ -3,6 +3,8 @@ const CheckIn = require('../models/CheckIn');
 const User = require('../models/User');
 const { HTTP_STATUS, MOOD_SCALE } = require('../config/constants');
 const openaiService = require('../services/openai.service');
+const notificationService = require('../services/notifications/notification.service');
+const achievementService = require('../services/achievement.service');
 
 class CheckInController {
   // Create daily check-in
@@ -45,13 +47,16 @@ class CheckInController {
 
       await checkIn.save();
 
+      // Wait a moment for post-save middleware to complete, then get updated user data
+      await new Promise(resolve => setTimeout(resolve, 100));
+      const updatedUser = await User.findById(userId);
+
       // Populate user data for response
       await checkIn.populate('userId', 'name employeeId department wellness');
-
+      
       // Calculate streak bonus
-      const user = await User.findById(userId);
       let streakBonus = 0;
-      const currentStreak = user.wellness.currentStreak;
+      const currentStreak = updatedUser.wellness.currentStreak;
       
       // Check for streak milestones
       if (currentStreak === 7) streakBonus = 100;
@@ -59,9 +64,63 @@ class CheckInController {
       else if (currentStreak === 90) streakBonus = 1500;
 
       if (streakBonus > 0) {
-        user.wellness.happyCoins += streakBonus;
-        await user.save();
+        updatedUser.wellness.happyCoins += streakBonus;
+        await updatedUser.save();
       }
+
+      // Create notifications for the check-in
+      setImmediate(async () => {
+        try {
+          // Notify about happy coins earned
+          await notificationService.notifyHappyCoinsEarned(
+            userId, 
+            checkIn.happyCoinsEarned + streakBonus,
+            'check_in'
+          );
+
+          // Notify about check-in completion
+          await notificationService.notifyCheckInCompleted(
+            userId, 
+            mood, 
+            updatedUser.wellness.currentStreak
+          );
+
+          // Check for streak milestones and notify
+          const streak = updatedUser.wellness.currentStreak;
+          if ([7, 14, 30, 60, 90, 180, 365].includes(streak)) {
+            await notificationService.notifyStreakMilestone(userId, streak, streakBonus);
+          }
+
+          console.log(`📱 Check-in notifications created for user ${userId}`);
+        } catch (error) {
+          console.error('Error creating check-in notifications:', error);
+        }
+      });
+
+      // Check and award achievements in background
+      setImmediate(async () => {
+        try {
+          const achievementData = {
+            checkIn: {
+              mood,
+              happyCoinsEarned: checkIn.happyCoinsEarned
+            },
+            user: updatedUser
+          };
+
+          const newAchievements = await achievementService.checkAndAwardAchievements(
+            userId, 
+            'check_in', 
+            achievementData
+          );
+
+          if (newAchievements.length > 0) {
+            console.log(`🏆 User ${userId} earned ${newAchievements.length} new achievements from check-in`);
+          }
+        } catch (error) {
+          console.error('Error checking achievements after check-in:', error);
+        }
+      });
 
       // Perform AI analysis in background (don't block response)
       if (openaiService.isEnabled) {
@@ -111,9 +170,9 @@ class CheckInController {
             source
           },
           user: {
-            totalHappyCoins: user.wellness.happyCoins,
-            currentStreak: user.wellness.currentStreak,
-            longestStreak: user.wellness.longestStreak
+            totalHappyCoins: updatedUser.wellness.happyCoins,
+            currentStreak: updatedUser.wellness.currentStreak,
+            longestStreak: updatedUser.wellness.longestStreak
           },
           streakBonus,
           nextCheckIn: getNextCheckInTime()

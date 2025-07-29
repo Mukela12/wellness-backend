@@ -11,6 +11,10 @@ const challengeRoutes = require('./challengeRoutes');
 const resourceRoutes = require('./resourceRoutes');
 const rewardRoutes = require('./rewardRoutes');
 const whatsappRoutes = require('./whatsapp.routes');
+const notificationRoutes = require('./notification.routes');
+const journalRoutes = require('./journal.routes');
+const quotesRoutes = require('./quotes.routes');
+const leaderboardRoutes = require('./leaderboard.routes');
 
 const router = express.Router();
 
@@ -96,16 +100,16 @@ router.get('/', (req, res) => {
           'GET /api/challenges/active': 'Get active challenges for user (auth required)',
           'GET /api/challenges/my-challenges': 'Get user\'s challenges (auth required)',
           'GET /api/challenges': 'Get all challenges (auth required)',
-          'POST /api/challenges': 'Create new challenge (Manager/HR/Admin only)',
+          'POST /api/challenges': 'Create new challenge (HR/Admin only)',
           'GET /api/challenges/:id': 'Get challenge details (auth required)',
-          'PUT /api/challenges/:id': 'Update challenge (Manager/HR/Admin only)',
-          'DELETE /api/challenges/:id': 'Delete challenge (Manager/HR/Admin only)',
+          'PUT /api/challenges/:id': 'Update challenge (HR/Admin only)',
+          'DELETE /api/challenges/:id': 'Delete challenge (HR/Admin only)',
           'POST /api/challenges/:id/join': 'Join challenge (auth required)',
           'POST /api/challenges/:id/leave': 'Leave challenge (auth required)',
           'POST /api/challenges/:id/progress': 'Update challenge progress (auth required)',
           'GET /api/challenges/:id/leaderboard': 'Get challenge leaderboard (auth required)',
-          'GET /api/challenges/:id/analytics': 'Get challenge analytics (Manager/HR/Admin only)',
-          'PATCH /api/challenges/:id/status': 'Update challenge status (Manager/HR/Admin only)'
+          'GET /api/challenges/:id/analytics': 'Get challenge analytics (HR/Admin only)',
+          'PATCH /api/challenges/:id/status': 'Update challenge status (HR/Admin only)'
         },
         resources: {
           'GET /api/resources/categories': 'Get resource categories (auth required)',
@@ -114,13 +118,13 @@ router.get('/', (req, res) => {
           'GET /api/resources/my-history': 'Get user resource history (auth required)',
           'GET /api/resources/category/:category': 'Get resources by category (auth required)',
           'GET /api/resources': 'Get all resources (auth required)',
-          'POST /api/resources': 'Create new resource (Manager/HR/Admin only)',
+          'POST /api/resources': 'Create new resource (Admin only)',
           'GET /api/resources/:id': 'Get resource details (auth required)',
-          'PUT /api/resources/:id': 'Update resource (Manager/HR/Admin only)',
-          'DELETE /api/resources/:id': 'Delete resource (Manager/HR/Admin only)',
+          'PUT /api/resources/:id': 'Update resource (Admin only)',
+          'DELETE /api/resources/:id': 'Delete resource (Admin only)',
           'POST /api/resources/:id/interact': 'Interact with resource (auth required)',
-          'GET /api/resources/:id/analytics': 'Get resource analytics (Manager/HR/Admin only)',
-          'PATCH /api/resources/:id/status': 'Update resource status (Manager/HR/Admin only)'
+          'GET /api/resources/:id/analytics': 'Get resource analytics (Admin only)',
+          'PATCH /api/resources/:id/status': 'Update resource status (Admin only)'
         },
         rewards: {
           'GET /api/rewards/categories': 'Get reward categories (auth required)',
@@ -151,6 +155,52 @@ router.get('/', (req, res) => {
           'POST /api/whatsapp/send-report': 'Send weekly report (Admin only)',
           'GET /api/whatsapp/status': 'Get WhatsApp service status (auth required)',
           'POST /api/whatsapp/test-template': 'Test template message (Development only)'
+        },
+        notifications: {
+          'GET /api/notifications': 'Get user notifications with pagination (auth required)',
+          'GET /api/notifications/unread-count': 'Get unread notification count (auth required)',
+          'GET /api/notifications/stats': 'Get notification statistics (auth required)',
+          'PATCH /api/notifications/mark-read': 'Mark specific notifications as read (auth required)',
+          'PATCH /api/notifications/mark-all-read': 'Mark all notifications as read (auth required)',
+          'POST /api/notifications/test': 'Create test notification (Development only)',
+          'POST /api/notifications/send-to-users': 'Send notification to specific users (HR/Admin only)',
+          'POST /api/notifications/send-to-all': 'Send notification to all users (Admin only)'
+        },
+        journals: {
+          'GET /api/journals': 'Get user journal entries with pagination and filtering (auth required)',
+          'POST /api/journals': 'Create new journal entry (auth required)',
+          'GET /api/journals/stats': 'Get user journaling statistics (auth required)',
+          'GET /api/journals/prompts': 'Get AI-generated writing prompts (auth required)',
+          'GET /api/journals/insights': 'Get AI-powered insights from journal entries (auth required)',
+          'GET /api/journals/streak': 'Get user journaling streak information (auth required)',
+          'GET /api/journals/search': 'Search through user journal entries (auth required)',
+          'GET /api/journals/:id': 'Get specific journal entry (auth required)',
+          'PUT /api/journals/:id': 'Update journal entry within 24 hours (auth required)',
+          'DELETE /api/journals/:id': 'Delete journal entry (auth required)',
+          'POST /api/journals/:id/analyze': 'Request AI analysis of journal entry (auth required)',
+          'GET /api/journals/export/data': 'Export user journal data (auth required)',
+          'POST /api/journals/import/data': 'Import journal data (auth required)',
+          'GET /api/journals/admin/overview': 'Get journaling system overview (Admin/HR only)',
+          'GET /api/journals/admin/trends': 'Get journaling trends and patterns (Admin/HR only)'
+        },
+        quotes: {
+          'GET /api/quotes/today': 'Get today\'s personalized motivational quote (auth required)',
+          'GET /api/quotes/history': 'Get user\'s quote history with pagination (auth required)',
+          'POST /api/quotes/:id/view': 'Mark quote as viewed and track viewing time (auth required)',
+          'POST /api/quotes/:id/like': 'Toggle like status for a quote (auth required)',
+          'POST /api/quotes/:id/share': 'Mark quote as shared and get shareable content (auth required)',
+          'POST /api/quotes/:id/feedback': 'Submit feedback and rating for a quote (auth required)',
+          'GET /api/quotes/stats': 'Get user\'s quote engagement statistics (auth required)',
+          'GET /api/quotes/categories': 'Get available quote categories (auth required)',
+          'GET /api/quotes/search': 'Search through user\'s quote history (auth required)',
+          'GET /api/quotes/admin/overview': 'Get quotes system overview and analytics (Admin/HR only)',
+          'GET /api/quotes/admin/engagement': 'Get detailed engagement analytics (Admin/HR only)'
+        },
+        leaderboard: {
+          'GET /api/leaderboard/happy-coins': 'Get global Happy Coins leaderboard (auth required)',
+          'GET /api/leaderboard/department/:department': 'Get department-specific Happy Coins leaderboard (auth required)',
+          'GET /api/leaderboard/stats': 'Get leaderboard statistics and insights (auth required)',
+          'GET /api/leaderboard/user/:userId?': 'Get user ranking and nearby users (auth required)'
         },
         users: {
           'GET /api/users': 'Get all users with pagination and filtering (Admin only)',
@@ -196,6 +246,10 @@ router.use('/challenges', challengeRoutes);
 router.use('/resources', resourceRoutes);
 router.use('/rewards', rewardRoutes);
 router.use('/whatsapp', whatsappRoutes);
+router.use('/notifications', notificationRoutes);
+router.use('/journals', journalRoutes);
+router.use('/quotes', quotesRoutes);
+router.use('/leaderboard', leaderboardRoutes);
 
 // User management routes (Admin only)
 router.use('/users', require('./user.routes'));

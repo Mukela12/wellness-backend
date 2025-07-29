@@ -86,10 +86,13 @@ const authorize = (...roles) => {
       });
     }
 
-    if (!roles.includes(req.user.role)) {
+    // Handle both array and individual arguments
+    const allowedRoles = roles.length === 1 && Array.isArray(roles[0]) ? roles[0] : roles;
+
+    if (!allowedRoles.includes(req.user.role)) {
       return res.status(HTTP_STATUS.FORBIDDEN).json({
         success: false,
-        message: `Access denied. Required roles: ${roles.join(', ')}`
+        message: `Access denied. Required roles: ${allowedRoles.join(', ')}`
       });
     }
 

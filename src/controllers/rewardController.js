@@ -2,6 +2,8 @@ const { Reward, Redemption, Achievement, UserAchievement, Recognition } = requir
 const User = require('../models/User');
 const { sendSuccessResponse, sendErrorResponse } = require('../utils/responseUtils');
 const mongoose = require('mongoose');
+const notificationService = require('../services/notifications/notification.service');
+const achievementService = require('../services/achievement.service');
 
 const rewardController = {
   // =====================
@@ -356,6 +358,19 @@ const rewardController = {
         reward.save()
       ]);
 
+      // Send notification about reward redemption
+      setImmediate(async () => {
+        try {
+          await notificationService.notifyRewardRedeemed(
+            req.user.id,
+            reward.name,
+            reward.cost
+          );
+        } catch (error) {
+          console.error('Error sending reward redemption notification:', error);
+        }
+      });
+
       sendSuccessResponse(res, {
         message: 'Reward redeemed successfully',
         data: {
@@ -691,6 +706,27 @@ const rewardController = {
 
       recipient.wellness.happyCoins += recognition.value.happyCoins;
       await recipient.save();
+
+      // Check achievements for both sender and recipient in background
+      setImmediate(async () => {
+        try {
+          // Check achievements for recipient (receiving recognition)
+          await achievementService.checkAndAwardAchievements(
+            toUserId, 
+            'peer_recognition_received',
+            { recognition, sender: req.user }
+          );
+
+          // Check achievements for sender (sending recognition)
+          await achievementService.checkAndAwardAchievements(
+            req.user.id, 
+            'peer_recognition_sent',
+            { recognition, recipient }
+          );
+        } catch (error) {
+          console.error('Error checking achievements after peer recognition:', error);
+        }
+      });
 
       sendSuccessResponse(res, {
         message: 'Recognition sent successfully',

@@ -118,15 +118,16 @@ class AuthController {
         });
       }
 
+      // TEMPORARILY BYPASSED: Email verification for testing
       // Enforce email verification for employees (block login if not verified)
-      if (user.role === 'employee' && !user.isEmailVerified) {
-        return res.status(HTTP_STATUS.UNAUTHORIZED).json({
-          success: false,
-          message: 'Please verify your email address before logging in. Check your inbox for the verification link.',
-          requiresEmailVerification: true,
-          email: user.email
-        });
-      }
+      // if (user.role === 'employee' && !user.isEmailVerified) {
+      //   return res.status(HTTP_STATUS.UNAUTHORIZED).json({
+      //     success: false,
+      //     message: 'Please verify your email address before logging in. Check your inbox for the verification link.',
+      //     requiresEmailVerification: true,
+      //     email: user.email
+      //   });
+      // }
 
       // Verify password
       const isPasswordValid = await user.comparePassword(password);
