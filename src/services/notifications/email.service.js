@@ -31,16 +31,16 @@ class EmailService {
   // Send welcome email after registration
   async sendWelcomeEmail(user) {
     const mailOptions = {
-      from: process.env.EMAIL_FROM || 'WellifyAI <noreply@wellifyai.com>',
+      from: process.env.EMAIL_FROM || 'Welldify AI <noreply@welldify.ai>',
       to: user.email,
-      subject: 'Welcome to WellifyAI - Your Workplace Wellness Journey Begins',
+      subject: 'Welcome to Welldify AI - Your Workplace Wellness Journey Begins',
       html: `
         <!DOCTYPE html>
         <html>
         <head>
           <meta charset="utf-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Welcome to WellifyAI</title>
+          <title>Welcome to Welldify AI</title>
           <style>
             body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
             .container { max-width: 600px; margin: 0 auto; padding: 20px; }
@@ -54,14 +54,14 @@ class EmailService {
         <body>
           <div class="container">
             <div class="header">
-              <h1 style="color: white; margin: 0;">Welcome to WellifyAI</h1>
+              <h1 style="color: white; margin: 0;">Welcome to Welldify AI</h1>
               <p style="color: white; margin: 10px 0 0 0;">Your AI-Powered Workplace Wellness Platform</p>
             </div>
             
             <div class="content">
               <h2>Dear ${user.name},</h2>
               
-              <p>Welcome to WellifyAI. We are pleased to have you join our workplace wellness platform designed to support your mental health and overall wellbeing.</p>
+              <p>Welcome to Welldify AI. We are pleased to have you join our workplace wellness platform designed to support your mental health and overall wellbeing.</p>
               
               <div class="feature">
                 <h3>Getting Started</h3>
@@ -101,13 +101,13 @@ class EmailService {
               <p>If you have any questions, our support team is available to assist you. Please feel free to reply to this email.</p>
               
               <p>Best regards,<br>
-              <strong>The WellifyAI Team</strong></p>
+              <strong>The Welldify AI Team</strong></p>
             </div>
             
             <div class="footer">
               <p style="margin: 0; color: #666;">
                 This email was sent to ${user.email}<br>
-                WellifyAI | Empowering Workplace Wellness Through AI
+                Welldify AI | Empowering Workplace Wellness Through AI
               </p>
             </div>
           </div>
@@ -131,9 +131,9 @@ class EmailService {
     const verificationUrl = `${process.env.CLIENT_URL}/verify-email?token=${verificationToken}`;
     
     const mailOptions = {
-      from: process.env.EMAIL_FROM || 'WellifyAI <noreply@wellifyai.com>',
+      from: process.env.EMAIL_FROM || 'Welldify AI <noreply@welldify.ai>',
       to: user.email,
-      subject: 'Please Verify Your WellifyAI Email Address',
+      subject: 'Please Verify Your Welldify AI Email Address',
       html: `
         <!DOCTYPE html>
         <html>
@@ -160,7 +160,7 @@ class EmailService {
             <div class="content">
               <h2>Dear ${user.name},</h2>
               
-              <p>Thank you for registering with WellifyAI. To complete your account setup and access all platform features, please verify your email address.</p>
+              <p>Thank you for registering with Welldify AI. To complete your account setup and access all platform features, please verify your email address.</p>
               
               <p style="text-align: center;">
                 <a href="${verificationUrl}" class="btn">Verify Email Address</a>
@@ -171,7 +171,7 @@ class EmailService {
               
               <div class="security-note">
                 <strong>Security Notice:</strong><br>
-                This verification link will expire in 24 hours for your security. If you did not create a WellifyAI account, please disregard this email.
+                This verification link will expire in 24 hours for your security. If you did not create a Welldify AI account, please disregard this email.
               </div>
               
               <p>Once verified, you'll be able to:</p>
@@ -185,13 +185,13 @@ class EmailService {
               <p>Need assistance? Please reply to this email and our support team will be happy to help.</p>
               
               <p>Sincerely,<br>
-              <strong>The WellifyAI Team</strong></p>
+              <strong>The Welldify AI Team</strong></p>
             </div>
             
             <div class="footer">
               <p style="margin: 0; color: #666;">
                 This email was sent to ${user.email}<br>
-                WellifyAI | Secure. Private. Focused on Your Wellbeing.
+                Welldify AI | Secure. Private. Focused on Your Wellbeing.
               </p>
             </div>
           </div>
@@ -215,9 +215,9 @@ class EmailService {
     const resetUrl = `${process.env.CLIENT_URL}/reset-password?token=${resetToken}`;
     
     const mailOptions = {
-      from: process.env.EMAIL_FROM || 'WellifyAI <noreply@wellifyai.com>',
+      from: process.env.EMAIL_FROM || 'Welldify AI <noreply@welldify.ai>',
       to: user.email,
-      subject: 'Password Reset Request - WellifyAI',
+      subject: 'Password Reset Request - Welldify AI',
       html: `
         <!DOCTYPE html>
         <html>
@@ -244,7 +244,7 @@ class EmailService {
             <div class="content">
               <h2>Dear ${user.name},</h2>
               
-              <p>We received a request to reset your WellifyAI account password. If you initiated this request, please click the button below to create a new password.</p>
+              <p>We received a request to reset your Welldify AI account password. If you initiated this request, please click the button below to create a new password.</p>
               
               <p style="text-align: center;">
                 <a href="${resetUrl}" class="btn">Reset Password</a>
@@ -267,13 +267,13 @@ class EmailService {
               <p>For additional security questions, please contact our support team by replying to this email.</p>
               
               <p>Regards,<br>
-              <strong>The WellifyAI Security Team</strong></p>
+              <strong>The Welldify AI Security Team</strong></p>
             </div>
             
             <div class="footer">
               <p style="margin: 0; color: #666;">
                 This email was sent to ${user.email}<br>
-                WellifyAI | Your Privacy and Security Are Our Priority
+                Welldify AI | Your Privacy and Security Are Our Priority
               </p>
             </div>
           </div>
@@ -295,9 +295,9 @@ class EmailService {
   // Send daily check-in reminder
   async sendCheckInReminder(user) {
     const mailOptions = {
-      from: process.env.EMAIL_FROM || 'WellifyAI <noreply@wellifyai.com>',
+      from: process.env.EMAIL_FROM || 'Welldify AI <noreply@welldify.ai>',
       to: user.email,
-      subject: 'Daily Wellness Check-in Reminder - WellifyAI',
+      subject: 'Daily Wellness Check-in Reminder - Welldify AI',
       html: `
         <!DOCTYPE html>
         <html>
@@ -346,7 +346,7 @@ class EmailService {
             
             <div class="footer">
               <p style="margin: 0; color: #666; font-size: 12px;">
-                WellifyAI | Supporting Your Daily Wellness Journey
+                Welldify AI | Supporting Your Daily Wellness Journey
               </p>
             </div>
           </div>
