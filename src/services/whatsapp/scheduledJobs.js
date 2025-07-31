@@ -50,16 +50,16 @@ class WhatsAppScheduledJobs {
         timezone: "UTC"
       });
 
-      // Test job every 5 minutes (development only)
+      // Test job every 5 minutes (development only) - DISABLED
       let testJob = null;
-      if (process.env.NODE_ENV === 'development') {
-        testJob = cron.schedule('*/5 * * * *', () => {
-          console.log('🔄 WhatsApp test job running every 5 minutes');
-        }, {
-          scheduled: false,
-          timezone: "UTC"
-        });
-      }
+      // if (process.env.NODE_ENV === 'development') {
+      //   testJob = cron.schedule('*/5 * * * *', () => {
+      //     console.log('🔄 WhatsApp test job running every 5 minutes');
+      //   }, {
+      //     scheduled: false,
+      //     timezone: "UTC"
+      //   });
+      // }
 
       // Store jobs for management
       this.jobs.set('dailyReminder', dailyReminderJob);

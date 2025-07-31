@@ -6,6 +6,7 @@ const onboardingRoutes = require('./onboarding.routes');
 const analyticsRoutes = require('./analytics.routes');
 const aiRoutes = require('./ai.routes');
 const surveyRoutes = require('./surveyRoutes');
+const surveyManagementRoutes = require('./survey.management.routes');
 const teamRoutes = require('./teamRoutes');
 const challengeRoutes = require('./challengeRoutes');
 const resourceRoutes = require('./resourceRoutes');
@@ -15,6 +16,7 @@ const notificationRoutes = require('./notification.routes');
 const journalRoutes = require('./journal.routes');
 const quotesRoutes = require('./quotes.routes');
 const leaderboardRoutes = require('./leaderboard.routes');
+const wordAnalyticsRoutes = require('./wordAnalytics.routes');
 
 const router = express.Router();
 
@@ -241,6 +243,7 @@ router.use('/onboarding', onboardingRoutes);
 router.use('/analytics', analyticsRoutes);
 router.use('/ai', aiRoutes);
 router.use('/surveys', surveyRoutes);
+router.use('/surveys/management', surveyManagementRoutes);
 router.use('/team', teamRoutes);
 router.use('/challenges', challengeRoutes);
 router.use('/resources', resourceRoutes);
@@ -250,6 +253,7 @@ router.use('/notifications', notificationRoutes);
 router.use('/journals', journalRoutes);
 router.use('/quotes', quotesRoutes);
 router.use('/leaderboard', leaderboardRoutes);
+router.use('/word-analytics', wordAnalyticsRoutes);
 
 // User management routes (Admin only)
 router.use('/users', require('./user.routes'));

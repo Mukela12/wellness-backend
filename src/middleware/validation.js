@@ -154,7 +154,45 @@ const validateProfileUpdate = [
   body('notifications.reminderTime')
     .optional()
     .matches(/^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/)
-    .withMessage('Reminder time must be in HH:MM format (24-hour)')
+    .withMessage('Reminder time must be in HH:MM format (24-hour)'),
+
+  // Demographics validation
+  body('demographics.age')
+    .optional()
+    .isInt({ min: 16, max: 100 })
+    .withMessage('Age must be between 16 and 100'),
+
+  body('demographics.gender')
+    .optional()
+    .isIn(['male', 'female', 'non-binary', 'prefer-not-to-say'])
+    .withMessage('Gender must be one of: male, female, non-binary, prefer-not-to-say'),
+
+  body('demographics.pronouns')
+    .optional()
+    .isIn(['he/him', 'she/her', 'they/them', 'other', 'prefer-not-to-say'])
+    .withMessage('Pronouns must be one of: he/him, she/her, they/them, other, prefer-not-to-say'),
+
+  // Employment validation
+  body('employment.jobTitle')
+    .optional()
+    .trim()
+    .isLength({ max: 100 })
+    .withMessage('Job title cannot exceed 100 characters'),
+
+  body('employment.seniority')
+    .optional()
+    .isIn(['intern', 'junior', 'mid-level', 'senior', 'lead', 'manager', 'director', 'executive'])
+    .withMessage('Seniority must be one of: intern, junior, mid-level, senior, lead, manager, director, executive'),
+
+  body('employment.hireDate')
+    .optional()
+    .isISO8601()
+    .withMessage('Hire date must be a valid date'),
+
+  body('employment.workLocation')
+    .optional()
+    .isIn(['remote', 'hybrid', 'on-site'])
+    .withMessage('Work location must be one of: remote, hybrid, on-site')
 ];
 
 // Check-in validation

@@ -368,69 +368,364 @@ const surveyController = {
     try {
       const templates = [
         {
-          id: 'weekly-wellness',
-          title: 'Weekly Wellness Check',
-          description: 'Standard weekly pulse survey for employee wellness',
+          id: 'weekly-engagement-pulse',
+          title: 'Weekly Engagement Pulse',
+          description: 'Quick weekly survey to measure employee engagement and satisfaction',
+          type: 'pulse',
+          priority: 'high',
+          estimatedTime: 3,
+          category: 'engagement',
           questions: [
             {
-              id: 'overall_satisfaction',
-              question: 'How satisfied are you with your work this week?',
+              id: 'enps_score',
+              question: `On a scale of 0-10, how likely are you to recommend ${process.env.COMPANY_NAME || 'this company'} as a great place to work?`,
               type: 'scale',
-              scale: { min: 1, max: 5, labels: new Map([['1', 'Very Dissatisfied'], ['5', 'Very Satisfied']]) },
+              scale: { 
+                min: 0, 
+                max: 10, 
+                labels: new Map([
+                  ['0', 'Not at all likely'], 
+                  ['5', 'Neutral'], 
+                  ['10', 'Extremely likely']
+                ]) 
+              },
+              category: 'eNPS',
               required: true
             },
             {
-              id: 'stress_level',
-              question: 'How would you rate your stress level this week?',
+              id: 'engagement_level',
+              question: 'How engaged do you feel at work today?',
               type: 'scale',
-              scale: { min: 1, max: 5, labels: new Map([['1', 'Very Low'], ['5', 'Very High']]) },
+              scale: { 
+                min: 1, 
+                max: 5, 
+                labels: new Map([
+                  ['1', 'Not engaged'], 
+                  ['2', 'Slightly engaged'],
+                  ['3', 'Moderately engaged'],
+                  ['4', 'Highly engaged'],
+                  ['5', 'Completely engaged']
+                ]) 
+              },
+              category: 'engagement',
               required: true
             },
             {
-              id: 'work_life_balance',
-              question: 'How well did you maintain work-life balance this week?',
+              id: 'workload_satisfaction',
+              question: 'How manageable is your current workload?',
               type: 'scale',
-              scale: { min: 1, max: 5, labels: new Map([['1', 'Very Poor'], ['5', 'Excellent']]) },
+              scale: { 
+                min: 1, 
+                max: 5, 
+                labels: new Map([
+                  ['1', 'Overwhelming'], 
+                  ['2', 'Heavy'],
+                  ['3', 'Just right'],
+                  ['4', 'Light'],
+                  ['5', 'Too light']
+                ]) 
+              },
+              category: 'wellbeing',
               required: true
             },
             {
-              id: 'team_support',
-              question: 'Do you feel supported by your team?',
+              id: 'support_feeling',
+              question: 'Do you feel supported by your immediate manager?',
               type: 'boolean',
+              category: 'leadership',
               required: true
             },
             {
-              id: 'feedback',
-              question: 'Any additional feedback or suggestions?',
+              id: 'improvement_suggestion',
+              question: 'What one thing would improve your work experience this week?',
               type: 'text',
+              category: 'feedback',
               required: false
             }
           ]
         },
         {
-          id: 'monthly-engagement',
-          title: 'Monthly Engagement Survey',
-          description: 'Comprehensive monthly engagement assessment',
+          id: 'comprehensive-engagement',
+          title: 'Comprehensive Engagement Survey',
+          description: 'Deep dive into employee engagement across all key dimensions',
+          type: 'pulse',
+          priority: 'normal',
+          estimatedTime: 8,
+          category: 'engagement',
           questions: [
+            // Purpose & Values
             {
-              id: 'job_satisfaction',
-              question: 'How satisfied are you with your current role?',
+              id: 'purpose_alignment',
+              question: 'I feel involved in and enthusiastic about my work',
               type: 'scale',
-              scale: { min: 1, max: 10, labels: new Map([['1', 'Not at all'], ['10', 'Extremely']]) },
+              scale: { 
+                min: 1, 
+                max: 5, 
+                labels: new Map([
+                  ['1', 'Strongly disagree'], 
+                  ['2', 'Disagree'],
+                  ['3', 'Neutral'],
+                  ['4', 'Agree'],
+                  ['5', 'Strongly agree']
+                ]) 
+              },
+              category: 'purpose',
               required: true
             },
+            {
+              id: 'values_alignment',
+              question: 'My personal values align with the organization\'s values',
+              type: 'scale',
+              scale: { 
+                min: 1, 
+                max: 5, 
+                labels: new Map([
+                  ['1', 'Strongly disagree'], 
+                  ['5', 'Strongly agree']
+                ]) 
+              },
+              category: 'purpose',
+              required: true
+            },
+            // Leadership
+            {
+              id: 'manager_support',
+              question: 'My direct manager provides me with the support I need',
+              type: 'scale',
+              scale: { 
+                min: 1, 
+                max: 5, 
+                labels: new Map([
+                  ['1', 'Strongly disagree'], 
+                  ['5', 'Strongly agree']
+                ]) 
+              },
+              category: 'leadership',
+              required: true
+            },
+            {
+              id: 'recognition_frequency',
+              question: 'I feel recognized and valued for my contributions',
+              type: 'scale',
+              scale: { 
+                min: 1, 
+                max: 5, 
+                labels: new Map([
+                  ['1', 'Never'], 
+                  ['2', 'Rarely'],
+                  ['3', 'Sometimes'],
+                  ['4', 'Often'],
+                  ['5', 'Always']
+                ]) 
+              },
+              category: 'appreciation',
+              required: true
+            },
+            // Innovation & Creativity
+            {
+              id: 'innovation_encouragement',
+              question: 'I feel empowered to take calculated risks and generate new ideas',
+              type: 'scale',
+              scale: { 
+                min: 1, 
+                max: 5, 
+                labels: new Map([
+                  ['1', 'Strongly disagree'], 
+                  ['5', 'Strongly agree']
+                ]) 
+              },
+              category: 'innovation',
+              required: true
+            },
+            // Teamwork
+            {
+              id: 'team_collaboration',
+              question: 'I feel comfortable collaborating and communicating with my colleagues',
+              type: 'scale',
+              scale: { 
+                min: 1, 
+                max: 5, 
+                labels: new Map([
+                  ['1', 'Strongly disagree'], 
+                  ['5', 'Strongly agree']
+                ]) 
+              },
+              category: 'teamwork',
+              required: true
+            },
+            // Growth & Career Progression
             {
               id: 'growth_opportunities',
-              question: 'Rate the growth opportunities available to you',
+              question: 'I have opportunities to grow personally and professionally',
               type: 'scale',
-              scale: { min: 1, max: 5, labels: new Map([['1', 'Very Poor'], ['5', 'Excellent']]) },
+              scale: { 
+                min: 1, 
+                max: 5, 
+                labels: new Map([
+                  ['1', 'Strongly disagree'], 
+                  ['5', 'Strongly agree']
+                ]) 
+              },
+              category: 'growth',
+              required: true
+            },
+            // Diversity, Equity & Inclusion
+            {
+              id: 'inclusion_feeling',
+              question: 'I feel welcomed and treated equally regardless of my background',
+              type: 'scale',
+              scale: { 
+                min: 1, 
+                max: 5, 
+                labels: new Map([
+                  ['1', 'Strongly disagree'], 
+                  ['5', 'Strongly agree']
+                ]) 
+              },
+              category: 'diversity',
+              required: true
+            },
+            // Wellbeing
+            {
+              id: 'wellbeing_support',
+              question: 'I feel supported in my physical, mental, and emotional well-being',
+              type: 'scale',
+              scale: { 
+                min: 1, 
+                max: 5, 
+                labels: new Map([
+                  ['1', 'Strongly disagree'], 
+                  ['5', 'Strongly agree']
+                ]) 
+              },
+              category: 'wellbeing',
+              required: true
+            },
+            // Psychological Safety
+            {
+              id: 'psychological_safety',
+              question: 'I feel safe to admit mistakes, express opinions, and seek help without fear of judgment',
+              type: 'scale',
+              scale: { 
+                min: 1, 
+                max: 5, 
+                labels: new Map([
+                  ['1', 'Strongly disagree'], 
+                  ['5', 'Strongly agree']
+                ]) 
+              },
+              category: 'psychological_safety',
+              required: true
+            },
+            // eNPS
+            {
+              id: 'enps_detailed',
+              question: `On a scale of 0-10, how likely are you to recommend ${process.env.COMPANY_NAME || 'this company'} as a great place to work?`,
+              type: 'scale',
+              scale: { 
+                min: 0, 
+                max: 10, 
+                labels: new Map([
+                  ['0', 'Not at all likely'], 
+                  ['5', 'Neutral'], 
+                  ['10', 'Extremely likely']
+                ]) 
+              },
+              category: 'eNPS',
               required: true
             },
             {
-              id: 'challenges_faced',
-              question: 'What challenges did you face this month?',
-              type: 'checkbox',
-              options: ['Heavy workload', 'Unclear expectations', 'Lack of resources', 'Communication issues', 'Technical problems', 'Other'],
+              id: 'enps_reason',
+              question: 'What is the main reason for your score above?',
+              type: 'text',
+              category: 'eNPS',
+              required: false
+            }
+          ]
+        },
+        {
+          id: 'wellness-focus',
+          title: 'Wellness & Work-Life Balance Survey',
+          description: 'Focus on employee wellness, stress levels, and work-life balance',
+          type: 'pulse',
+          priority: 'normal',
+          estimatedTime: 5,
+          category: 'wellbeing',
+          questions: [
+            {
+              id: 'stress_level_detailed',
+              question: 'How would you rate your current stress level at work?',
+              type: 'scale',
+              scale: { 
+                min: 1, 
+                max: 10, 
+                labels: new Map([
+                  ['1', 'No stress'], 
+                  ['5', 'Moderate stress'],
+                  ['10', 'Extreme stress']
+                ]) 
+              },
+              category: 'wellbeing',
+              required: true
+            },
+            {
+              id: 'work_life_balance',
+              question: 'How satisfied are you with your current work-life balance?',
+              type: 'scale',
+              scale: { 
+                min: 1, 
+                max: 5, 
+                labels: new Map([
+                  ['1', 'Very dissatisfied'], 
+                  ['2', 'Dissatisfied'],
+                  ['3', 'Neutral'],
+                  ['4', 'Satisfied'],
+                  ['5', 'Very satisfied']
+                ]) 
+              },
+              category: 'wellbeing',
+              required: true
+            },
+            {
+              id: 'mental_health_support',
+              question: 'Do you feel you have access to adequate mental health resources?',
+              type: 'boolean',
+              category: 'wellbeing',
+              required: true
+            },
+            {
+              id: 'workload_manageability',
+              question: 'How often do you feel overwhelmed by your workload?',
+              type: 'scale',
+              scale: { 
+                min: 1, 
+                max: 5, 
+                labels: new Map([
+                  ['1', 'Never'], 
+                  ['2', 'Rarely'],
+                  ['3', 'Sometimes'],
+                  ['4', 'Often'],
+                  ['5', 'Always']
+                ]) 
+              },
+              category: 'wellbeing',
+              required: true
+            },
+            {
+              id: 'wellness_priorities',
+              question: 'Which wellness areas are most important to you? (Select up to 3)',
+              type: 'multiple_choice',
+              options: [
+                'Physical fitness and exercise',
+                'Mental health and stress management', 
+                'Nutrition and healthy eating',
+                'Sleep quality and rest',
+                'Work-life balance',
+                'Social connections',
+                'Financial wellness',
+                'Career development'
+              ],
+              category: 'wellbeing',
               required: false
             }
           ]

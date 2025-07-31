@@ -309,6 +309,10 @@ class AuthController {
 
       // Remove refresh token from database
       if (refreshToken && user) {
+        // Ensure refreshTokens array exists
+        if (!user.refreshTokens) {
+          user.refreshTokens = [];
+        }
         user.refreshTokens = user.refreshTokens.filter(t => t.token !== refreshToken);
         await user.save();
       }
@@ -345,18 +349,37 @@ class AuthController {
       // Hash the token to compare with stored hash
       const hashedToken = crypto.createHash('sha256').update(token).digest('hex');
 
-      // Find user with matching token and check expiration
-      const user = await User.findOne({
-        emailVerificationToken: hashedToken,
-        emailVerificationExpires: { $gt: Date.now() }
+      // First check if user with this token exists
+      const userWithToken = await User.findOne({
+        emailVerificationToken: hashedToken
       });
 
-      if (!user) {
+      // If no user found with this token, check if maybe it's already been used
+      if (!userWithToken) {
+        // Check if we can find a user who might have used this token recently
         return res.status(HTTP_STATUS.BAD_REQUEST).json({
           success: false,
           message: 'Invalid or expired verification token'
         });
       }
+
+      // Check if email is already verified
+      if (userWithToken.isEmailVerified) {
+        return res.status(HTTP_STATUS.OK).json({
+          success: true,
+          message: 'Email is already verified'
+        });
+      }
+
+      // Check if token has expired
+      if (userWithToken.emailVerificationExpires < Date.now()) {
+        return res.status(HTTP_STATUS.BAD_REQUEST).json({
+          success: false,
+          message: 'Verification token has expired'
+        });
+      }
+
+      const user = userWithToken;
 
       // Mark email as verified
       user.isEmailVerified = true;
@@ -559,6 +582,8 @@ class AuthController {
         role: user.role,
         isEmailVerified: user.isEmailVerified,
         onboarding: user.onboarding,
+        demographics: user.demographics,
+        employment: user.employment,
         personality: user.personality,
         wellness: user.wellness,
         notifications: user.notifications,

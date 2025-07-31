@@ -68,6 +68,49 @@ const userSchema = new mongoose.Schema({
     completedAt: Date
   },
 
+  // Demographics & Professional Info
+  demographics: {
+    age: {
+      type: Number,
+      min: 16,
+      max: 100
+    },
+    gender: {
+      type: String,
+      enum: ['male', 'female', 'non-binary', 'prefer-not-to-say'],
+      default: 'prefer-not-to-say'
+    },
+    pronouns: {
+      type: String,
+      enum: ['he/him', 'she/her', 'they/them', 'other', 'prefer-not-to-say'],
+      default: 'prefer-not-to-say'
+    }
+  },
+  
+  // Employment Information
+  employment: {
+    hireDate: {
+      type: Date
+    },
+    jobTitle: {
+      type: String,
+      trim: true
+    },
+    seniority: {
+      type: String,
+      enum: ['intern', 'junior', 'mid-level', 'senior', 'lead', 'manager', 'director', 'executive']
+    },
+    workLocation: {
+      type: String,
+      enum: ['remote', 'hybrid', 'on-site'],
+      default: 'on-site'
+    },
+    manager: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: 'User'
+    }
+  },
+
   // Personality & Preferences
   personality: {
     mbtiType: {
@@ -191,6 +234,16 @@ userSchema.index({ email: 1, employeeId: 1 });
 userSchema.index({ department: 1, 'wellness.riskLevel': 1 });
 userSchema.index({ isActive: 1, role: 1 });
 userSchema.index({ 'wellness.lastCheckIn': -1 });
+userSchema.index({ 'employment.hireDate': 1, 'employment.seniority': 1 });
+userSchema.index({ 'demographics.age': 1, 'demographics.gender': 1 });
+
+// Virtual for calculating years of service
+userSchema.virtual('yearsOfService').get(function() {
+  if (!this.employment.hireDate) return 0;
+  const now = new Date();
+  const hireDate = new Date(this.employment.hireDate);
+  return Math.floor((now - hireDate) / (365.25 * 24 * 60 * 60 * 1000));
+});
 
 // Virtual for user's full profile
 userSchema.virtual('profile').get(function() {
@@ -202,7 +255,11 @@ userSchema.virtual('profile').get(function() {
     department: this.department,
     role: this.role,
     wellness: this.wellness,
-    onboarding: this.onboarding
+    onboarding: this.onboarding,
+    demographics: this.demographics,
+    employment: this.employment,
+    personality: this.personality,
+    yearsOfService: this.yearsOfService
   };
 });
 

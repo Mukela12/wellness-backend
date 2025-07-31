@@ -715,6 +715,232 @@ Respond in valid JSON format only:
     }
   }
 
+  // Analyze text for word frequency and sentiment
+  async analyzeTextForWordFrequency(textData) {
+    if (!this.isEnabled) {
+      return null;
+    }
+
+    try {
+      const { text, sourceType, userId, metadata = {} } = textData;
+
+      const prompt = `
+You are a wellness AI assistant analyzing text for word frequency, sentiment, and themes.
+
+Text to Analyze:
+"${text}"
+
+Source Type: ${sourceType}
+User Context:
+- Department: ${metadata.department || 'Unknown'}
+- Current Mood: ${metadata.mood || 'N/A'}
+- Risk Level: ${metadata.riskLevel || 'unknown'}
+
+Analyze this text and provide:
+1. Extract the 10-15 most meaningful words (excluding common stop words)
+2. Assign sentiment to each word (positive/negative/neutral)
+3. Calculate overall sentiment score (-1 to 1)
+4. Identify key themes and emotions
+5. Detect any wellness concerns or strengths
+
+Guidelines:
+- Focus on emotionally significant words
+- Include professional/workplace terms if relevant
+- Weight words by emotional intensity and relevance
+- Consider context when assigning sentiment
+
+Respond in valid JSON format only:
+{
+  "words": [
+    {
+      "word": "word_here",
+      "count": number,
+      "weight": number_0_to_1,
+      "sentiment": "positive|negative|neutral",
+      "category": "emotion|work|wellness|general"
+    }
+  ],
+  "sentiment": {
+    "score": number_-1_to_1,
+    "label": "very_negative|negative|neutral|positive|very_positive"
+  },
+  "themes": [
+    {
+      "theme": "theme_name",
+      "confidence": number_0_to_1
+    }
+  ],
+  "emotions": [
+    {
+      "emotion": "emotion_name",
+      "intensity": number_0_to_1
+    }
+  ],
+  "insights": {
+    "concerns": ["concern1", "concern2"],
+    "strengths": ["strength1", "strength2"],
+    "summary": "brief analysis summary"
+  }
+}`;
+
+      const response = await this.client.chat.completions.create({
+        model: this.model,
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a wellness AI analyzing text for word frequency and sentiment. Focus on meaningful, emotionally significant words while excluding common stop words.'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        max_tokens: 800,
+        temperature: 0.3 // Low temperature for consistent analysis
+      });
+
+      const content = response.choices[0]?.message?.content?.trim();
+      
+      try {
+        const analysis = JSON.parse(content);
+        return {
+          ...analysis,
+          usage: response.usage,
+          analyzedAt: new Date()
+        };
+      } catch (parseError) {
+        console.error('Failed to parse word frequency analysis:', content);
+        return null;
+      }
+    } catch (error) {
+      console.error('Word frequency analysis failed:', error.message);
+      return null;
+    }
+  }
+
+  // Generate insights from aggregated word frequency data
+  async generateWordCloudInsights(wordCloudData) {
+    if (!this.isEnabled) {
+      return null;
+    }
+
+    try {
+      const { topWords, timeframe, department, totalUsers } = wordCloudData;
+
+      const prompt = `
+You are a wellness AI assistant analyzing company-wide word frequency data to provide insights about employee sentiment and wellness.
+
+Word Frequency Data (Top 20 words):
+${topWords.map(w => `- "${w.word}": ${w.frequency} occurrences, ${w.userCount} users, sentiment: ${w.sentimentBreakdown ? JSON.stringify(w.sentimentBreakdown) : 'unknown'}`).join('\n')}
+
+Context:
+- Time Period: ${timeframe}
+- Department: ${department || 'Company-wide'}
+- Total Active Users: ${totalUsers}
+
+Analyze this word frequency data and provide:
+1. Overall company sentiment assessment
+2. Key themes and patterns
+3. Wellness insights based on word usage
+4. Potential areas of concern
+5. Positive indicators and strengths
+6. Actionable recommendations for HR
+
+Consider:
+- Frequency of positive vs negative words
+- Work-related stress indicators
+- Team/collaboration mentions
+- Wellness and health-related terms
+- Professional development themes
+
+Respond in valid JSON format only:
+{
+  "overallSentiment": {
+    "score": number_-1_to_1,
+    "label": "very_negative|negative|neutral|positive|very_positive",
+    "description": "detailed assessment"
+  },
+  "keyThemes": [
+    {
+      "theme": "theme_name",
+      "description": "theme description",
+      "relatedWords": ["word1", "word2"],
+      "significance": "high|medium|low"
+    }
+  ],
+  "wellnessInsights": {
+    "positiveIndicators": [
+      {
+        "indicator": "indicator_name",
+        "evidence": ["word1", "word2"],
+        "impact": "description of positive impact"
+      }
+    ],
+    "concerns": [
+      {
+        "concern": "concern_name",
+        "evidence": ["word1", "word2"],
+        "severity": "high|medium|low",
+        "recommendation": "specific action"
+      }
+    ]
+  },
+  "departmentSpecific": {
+    "strengths": ["strength1", "strength2"],
+    "challenges": ["challenge1", "challenge2"],
+    "culture": "brief culture description based on words"
+  },
+  "recommendations": [
+    {
+      "priority": "high|medium|low",
+      "action": "specific recommendation",
+      "rationale": "why this is important",
+      "expectedImpact": "what this will achieve"
+    }
+  ],
+  "summary": "Executive summary of the word analysis insights"
+}`;
+
+      const response = await this.client.chat.completions.create({
+        model: this.model,
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a professional wellness AI providing insights from word frequency analysis. Be thorough, data-driven, and focused on actionable recommendations.'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        max_tokens: 1200,
+        temperature: 0.5
+      });
+
+      const content = response.choices[0]?.message?.content?.trim();
+      
+      try {
+        const insights = JSON.parse(content);
+        return {
+          ...insights,
+          usage: response.usage,
+          generatedAt: new Date(),
+          dataAnalyzed: {
+            wordCount: topWords.length,
+            timeframe,
+            department: department || 'Company-wide'
+          }
+        };
+      } catch (parseError) {
+        console.error('Failed to parse word cloud insights:', content);
+        return null;
+      }
+    } catch (error) {
+      console.error('Word cloud insights generation failed:', error.message);
+      return null;
+    }
+  }
+
   // Generate personalized daily motivational quotes
   async generateDailyQuote(quoteData) {
     if (!this.isEnabled) {

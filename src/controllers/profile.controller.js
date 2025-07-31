@@ -17,12 +17,37 @@ class ProfileController {
       const userId = req.user._id;
       const updates = {};
       
+      console.log('Profile update request body:', JSON.stringify(req.body, null, 2));
+      
+      // Basic profile fields
       const allowedUpdates = ['name', 'phone', 'department'];
       allowedUpdates.forEach(field => {
         if (req.body[field] !== undefined) {
           updates[field] = req.body[field];
         }
       });
+
+      // Demographics updates - use dot notation for nested updates
+      if (req.body.demographics) {
+        const allowedDemographics = ['age', 'gender', 'pronouns'];
+        
+        allowedDemographics.forEach(field => {
+          if (req.body.demographics[field] !== undefined) {
+            updates[`demographics.${field}`] = req.body.demographics[field];
+          }
+        });
+      }
+
+      // Employment updates - use dot notation for nested updates
+      if (req.body.employment) {
+        const allowedEmployment = ['jobTitle', 'seniority', 'hireDate', 'workLocation'];
+        
+        allowedEmployment.forEach(field => {
+          if (req.body.employment[field] !== undefined) {
+            updates[`employment.${field}`] = req.body.employment[field];
+          }
+        });
+      }
 
       if (Object.keys(updates).length === 0) {
         return res.status(400).json({
@@ -32,6 +57,8 @@ class ProfileController {
       }
 
       updates.updatedAt = new Date();
+      
+      console.log('Final updates object:', JSON.stringify(updates, null, 2));
 
       const user = await User.findByIdAndUpdate(
         userId,

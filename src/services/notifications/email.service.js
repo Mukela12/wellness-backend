@@ -83,9 +83,13 @@ class EmailService {
                 <p>Get personalized recommendations, mood analysis, and wellness tips tailored to your unique profile.</p>
               </div>
               
-              <p style="text-align: center; margin: 30px 0;">
-                <a href="${process.env.CLIENT_URL}/onboarding" class="btn">Complete Onboarding</a>
-              </p>
+              <div style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 20px; border-radius: 6px; margin: 30px 0;">
+                <h3 style="margin: 0 0 10px 0; color: #856404;">⚠️ Email Verification Required</h3>
+                <p style="margin: 0; color: #856404;">
+                  Please check your inbox for a separate email to verify your email address. 
+                  You must verify your email before you can log in and start your wellness journey.
+                </p>
+              </div>
               
               <p><strong>Your Account Details:</strong></p>
               <ul>

@@ -2,6 +2,7 @@ require('dotenv').config();
 const app = require('./app');
 const connectDB = require('./config/database');
 const whatsappScheduledJobs = require('./services/whatsapp/scheduledJobs');
+const surveyScheduler = require('./services/survey.scheduler');
 
 const PORT = process.env.PORT || 5000;
 
@@ -22,6 +23,9 @@ if (process.env.WHATSAPP_ACCESS_TOKEN && process.env.WHATSAPP_PHONE_NUMBER_ID) {
 } else {
   console.log('⚠️  WhatsApp credentials not found, scheduled jobs disabled');
 }
+
+// Initialize Survey Scheduler
+console.log('📋 Survey scheduler initialized');
 
 // Handle unhandled promise rejections
 process.on('unhandledRejection', (err) => {
@@ -49,6 +53,8 @@ process.on('SIGTERM', () => {
   console.log('=K SIGTERM received. Shutting down gracefully...');
   
   server.close(() => {
+    // Cleanup survey scheduler
+    surveyScheduler.destroy();
     console.log('=� Process terminated');
   });
 });

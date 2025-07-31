@@ -37,6 +37,14 @@ const surveySchema = new mongoose.Schema({
     enum: ['draft', 'active', 'closed', 'archived'],
     default: 'draft'
   },
+  priority: {
+    type: String,
+    enum: ['low', 'normal', 'high', 'urgent'],
+    default: 'normal'
+  },
+  dueDate: {
+    type: Date
+  },
   questions: [{
     id: {
       type: String,
@@ -233,10 +241,27 @@ surveySchema.statics.getActiveSurveysForUser = async function(userId) {
   const surveys = await this.find({
     ...query,
     ...audienceQuery
+  }).sort({ 
+    priority: -1, // High priority first (urgent, high, normal, low)
+    createdAt: -1 
   });
   
-  // Filter out surveys user has already responded to
-  return surveys.filter(survey => !survey.hasUserResponded(userId));
+  // Filter out surveys user has already responded to and sort by priority
+  const availableSurveys = surveys.filter(survey => !survey.hasUserResponded(userId));
+  
+  // Custom sort to handle priority ordering properly
+  const priorityOrder = { 'urgent': 4, 'high': 3, 'normal': 2, 'low': 1 };
+  return availableSurveys.sort((a, b) => {
+    const aPriority = priorityOrder[a.priority] || 2;
+    const bPriority = priorityOrder[b.priority] || 2;
+    
+    if (aPriority !== bPriority) {
+      return bPriority - aPriority; // Higher priority first
+    }
+    
+    // If same priority, sort by creation date (newer first)
+    return new Date(b.createdAt) - new Date(a.createdAt);
+  });
 };
 
 // Pre-save middleware
