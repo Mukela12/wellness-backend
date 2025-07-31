@@ -304,22 +304,10 @@ class AuthController {
   // Logout user
   async logout(req, res) {
     try {
-      const refreshToken = req.cookies.refreshToken || req.body.refreshToken;
-      const { user } = req;
-
-      // Remove refresh token from database
-      if (refreshToken && user) {
-        // Ensure refreshTokens array exists
-        if (!user.refreshTokens) {
-          user.refreshTokens = [];
-        }
-        user.refreshTokens = user.refreshTokens.filter(t => t.token !== refreshToken);
-        await user.save();
-      }
-
-      // Clear refresh token cookie
-      res.clearCookie('refreshToken');
-
+      // Since we're not using refresh tokens in the frontend,
+      // we'll just return success. The frontend will handle clearing
+      // the access token from localStorage.
+      
       res.status(HTTP_STATUS.OK).json({
         success: true,
         message: 'Logged out successfully'

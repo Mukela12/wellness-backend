@@ -17,6 +17,7 @@ const journalRoutes = require('./journal.routes');
 const quotesRoutes = require('./quotes.routes');
 const leaderboardRoutes = require('./leaderboard.routes');
 const wordAnalyticsRoutes = require('./wordAnalytics.routes');
+const employeeManagementRoutes = require('./employeeManagement.routes');
 
 const router = express.Router();
 
@@ -254,6 +255,7 @@ router.use('/journals', journalRoutes);
 router.use('/quotes', quotesRoutes);
 router.use('/leaderboard', leaderboardRoutes);
 router.use('/word-analytics', wordAnalyticsRoutes);
+router.use('/employee-management', employeeManagementRoutes);
 
 // User management routes (Admin only)
 router.use('/users', require('./user.routes'));
