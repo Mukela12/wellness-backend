@@ -37,10 +37,20 @@ router.post('/events', (req, res, next) => {
 }, slackController.handleEvents);
 
 // Slack slash commands
-router.post('/commands', express.urlencoded({ extended: true }), rawBodyMiddleware, slackController.handleCommands);
+router.post('/commands', express.urlencoded({ 
+  extended: true,
+  verify: (req, res, buf) => {
+    req.rawBody = buf.toString();
+  }
+}), slackController.handleCommands);
 
 // Slack interactive components
-router.post('/interactions', express.urlencoded({ extended: true }), rawBodyMiddleware, slackController.handleInteractions);
+router.post('/interactions', express.urlencoded({ 
+  extended: true,
+  verify: (req, res, buf) => {
+    req.rawBody = buf.toString();
+  }
+}), slackController.handleInteractions);
 
 // OAuth callback
 router.get('/oauth/callback', slackController.handleOAuthCallback);
