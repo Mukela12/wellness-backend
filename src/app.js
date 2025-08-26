@@ -117,6 +117,9 @@ app.post('/slack-verify-test', (req, res) => {
   res.json({ message: 'Send a POST with {"challenge": "value"}' });
 });
 
+// Slack debug routes (before main routes)
+app.use('/api/slack-debug', require('./routes/slack-debug.routes'));
+
 // API routes
 app.use('/api', require('./routes'));
 
