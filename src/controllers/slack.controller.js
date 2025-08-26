@@ -1,5 +1,6 @@
 // Temporarily use minimal service until dependencies are installed
 const slackService = require('../services/slack/slack.service.minimal');
+const slackSurveyService = require('../services/slack/slackSurvey.service');
 const { sendSuccessResponse, sendErrorResponse } = require('../utils/responseUtils');
 
 const slackController = {
@@ -74,12 +75,18 @@ const slackController = {
       res.status(200).send();
 
       // Process the command asynchronously
-      const result = await slackService.handleSlashCommand(
-        command,
-        text,
-        user_id,
-        response_url
-      );
+      let result;
+      
+      switch (command) {
+        case '/wellness-survey':
+          result = await slackSurveyService.handleSurveyCommand(user_id, text);
+          break;
+        case '/quick-checkin':
+          result = await slackSurveyService.handleQuickCheckInCommand(user_id);
+          break;
+        default:
+          result = await slackService.handleSlashCommand(command, text, user_id, response_url);
+      }
 
       // Send response back to Slack if needed
       if (response_url && result) {
@@ -114,7 +121,25 @@ const slackController = {
       res.status(200).send();
 
       // Handle the interaction
-      const result = await slackService.handleInteraction(payload);
+      let result;
+      
+      // Check if it's a survey-related interaction
+      if (payload.actions && payload.actions[0]) {
+        const action = payload.actions[0];
+        
+        if (action.action_id.startsWith('quick_mood_')) {
+          result = await slackSurveyService.handleQuickMoodResponse(payload);
+        } else if (action.action_id.startsWith('q_') || 
+                   action.action_id === 'submit_survey' || 
+                   action.action_id === 'cancel_survey' ||
+                   action.action_id.startsWith('start_survey_')) {
+          result = await slackSurveyService.handleSurveyResponse(payload);
+        } else {
+          result = await slackService.handleInteraction(payload);
+        }
+      } else {
+        result = await slackService.handleInteraction(payload);
+      }
       
       // Send response if needed
       if (result && payload.response_url) {

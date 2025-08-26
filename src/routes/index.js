@@ -264,6 +264,7 @@ router.use('/leaderboard', leaderboardRoutes);
 router.use('/word-analytics', wordAnalyticsRoutes);
 router.use('/employee-management', employeeManagementRoutes);
 router.use('/slack', slackRoutes);
+router.use('/integrations', require('./integrations.routes'));
 
 // User management routes (Admin only)
 router.use('/users', require('./user.routes'));

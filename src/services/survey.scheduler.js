@@ -2,6 +2,7 @@ const cron = require('node-cron');
 const Survey = require('../models/Survey');
 const User = require('../models/User');
 const notificationService = require('./notifications/notification.service');
+const slackSurveyService = require('./slack/slackSurvey.service');
 
 class SurveyScheduler {
   constructor() {
@@ -250,7 +251,16 @@ class SurveyScheduler {
         notification
       );
 
-      console.log(`📱 Sent survey notifications to ${targetUsers.length} employees`);
+      // Also send via Slack to connected users
+      let slackCount = 0;
+      for (const user of targetUsers) {
+        if (user.integrations?.slack?.isConnected && user.notifications?.preferredChannel !== 'email') {
+          const sent = await slackSurveyService.sendSurveyToUser(user._id, survey._id);
+          if (sent) slackCount++;
+        }
+      }
+
+      console.log(`📱 Sent survey notifications to ${targetUsers.length} employees (${slackCount} via Slack)`);
     } catch (error) {
       console.error('Error notifying employees about new survey:', error);
     }
@@ -277,6 +287,13 @@ class SurveyScheduler {
         users.map(user => user._id),
         notification
       );
+
+      // Also send reminders via Slack to connected users
+      for (const user of users) {
+        if (user.integrations?.slack?.isConnected && user.notifications?.preferredChannel !== 'email') {
+          await slackSurveyService.sendSurveyToUser(user._id, survey._id);
+        }
+      }
     } catch (error) {
       console.error('Error sending survey reminder notifications:', error);
     }
@@ -305,7 +322,7 @@ class SurveyScheduler {
       }
     }
     
-    return await User.find(query).select('_id name email department');
+    return await User.find(query).select('_id name email department integrations notifications');
   }
 
   async getSystemUserId() {

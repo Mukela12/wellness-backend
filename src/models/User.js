@@ -221,7 +221,33 @@ const userSchema = new mongoose.Schema({
   
   // Password reset
   passwordResetToken: String,
-  passwordResetExpires: Date
+  passwordResetExpires: Date,
+
+  // Platform Integrations
+  integrations: {
+    slack: {
+      userId: String,
+      teamId: String,
+      teamName: String,
+      channelId: String,
+      accessToken: String,
+      isConnected: {
+        type: Boolean,
+        default: false
+      },
+      connectedAt: Date
+    },
+    teams: {
+      userId: String,
+      tenantId: String,
+      channelId: String,
+      isConnected: {
+        type: Boolean,
+        default: false
+      },
+      connectedAt: Date
+    }
+  }
 
 }, {
   timestamps: true,

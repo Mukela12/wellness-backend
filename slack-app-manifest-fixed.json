@@ -17,14 +17,14 @@
         "slash_commands": [
             {
                 "command": "/wellness-survey",
-                "url": "https://wellness-backend-fresh-production.up.railway.app/api/slack/commands",
+                "url": "https://wellness-backend-production-48b1.up.railway.app/api/slack/commands",
                 "description": "Take a wellness survey",
                 "usage_hint": "[survey-id]",
                 "should_escape": false
             },
             {
                 "command": "/quick-checkin",
-                "url": "https://wellness-backend-fresh-production.up.railway.app/api/slack/commands",
+                "url": "https://wellness-backend-production-48b1.up.railway.app/api/slack/commands",
                 "description": "Quick mood check-in",
                 "should_escape": false
             }
@@ -32,7 +32,7 @@
     },
     "oauth_config": {
         "redirect_urls": [
-            "https://wellness-backend-fresh-production.up.railway.app/api/slack/oauth/callback"
+            "https://wellness-backend-production-48b1.up.railway.app/api/slack/oauth/callback"
         ],
         "scopes": {
             "bot": [
@@ -52,7 +52,7 @@
     },
     "settings": {
         "event_subscriptions": {
-            "request_url": "https://wellness-backend-fresh-production.up.railway.app/api/slack/events",
+            "request_url": "https://wellness-backend-production-48b1.up.railway.app/api/slack/events",
             "bot_events": [
                 "app_mention",
                 "message.im"
@@ -60,7 +60,7 @@
         },
         "interactivity": {
             "is_enabled": true,
-            "request_url": "https://wellness-backend-fresh-production.up.railway.app/api/slack/interactions"
+            "request_url": "https://wellness-backend-production-48b1.up.railway.app/api/slack/interactions"
         },
         "org_deploy_enabled": false,
         "socket_mode_enabled": false,
