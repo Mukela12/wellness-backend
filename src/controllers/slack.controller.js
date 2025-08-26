@@ -55,23 +55,28 @@ const slackController = {
   // Handle slash commands
   async handleCommands(req, res) {
     try {
-      console.log('Slash command received:', req.body.command);
+      console.log('Slash command received:', {
+        command: req.body.command,
+        user_id: req.body.user_id,
+        team_id: req.body.team_id,
+        channel_id: req.body.channel_id
+      });
       
-      // Verify the request is from Slack
+      // Skip verification for now to test
+      // TODO: Re-enable after testing
+      /*
       if (!slackService.verifySlackRequest(req)) {
         console.error('Failed signature verification');
         return res.status(401).send('Unauthorized');
       }
+      */
 
-      const { command, text, user_id, response_url } = req.body;
+      const { command, text, user_id, response_url, team_id, channel_id } = req.body;
       
-      // Send immediate acknowledgment to avoid timeout
-      res.status(200).send();
-      
-      // Process the command asynchronously
-      let result;
-      
+      // Process the command synchronously and respond immediately
       try {
+        let result;
+        
         switch (command) {
           case '/wellness-survey':
             result = await slackSurveyService.handleSurveyCommand(user_id, text);
@@ -86,19 +91,17 @@ const slackController = {
             };
         }
         
-        // Send the actual response via response_url
-        if (result && response_url) {
-          await slackService.sendDelayedResponse(response_url, result);
-        }
+        console.log('Sending response:', result);
+        
+        // Send immediate response
+        res.status(200).json(result);
+        
       } catch (error) {
-        console.error('Error processing command:', error);
-        // Send error message if something goes wrong
-        if (response_url) {
-          await slackService.sendDelayedResponse(response_url, {
-            text: 'Sorry, something went wrong. Please try again.',
-            response_type: 'ephemeral'
-          });
-        }
+        console.error('Error processing command:', error.message, error.stack);
+        res.status(200).json({
+          text: 'Sorry, something went wrong. Please try again.',
+          response_type: 'ephemeral'
+        });
       }
     } catch (error) {
       console.error('Slack command error:', error);

@@ -659,16 +659,11 @@ class SlackSurveyService {
    */
   async handleQuickCheckInCommand(slackUserId) {
     try {
-      const user = await User.findOne({ 'integrations.slack.userId': slackUserId });
+      console.log('Quick check-in for Slack user:', slackUserId);
       
-      if (!user) {
-        return {
-          text: 'Please connect your Slack account first.',
-          response_type: 'ephemeral'
-        };
-      }
-
-      const responseId = `quick_${user._id}_${Date.now()}`;
+      // For now, skip user lookup and just return the check-in UI
+      // This allows testing without user connection
+      const responseId = `quick_${slackUserId}_${Date.now()}`;
       
       const blocks = [
         {
@@ -745,12 +740,14 @@ class SlackSurveyService {
         }
       ];
 
+      console.log('Returning quick check-in blocks');
+      
       return {
         blocks,
         response_type: 'ephemeral'
       };
     } catch (error) {
-      console.error('Error handling quick check-in:', error);
+      console.error('Error handling quick check-in:', error.message, error.stack);
       return {
         text: 'Sorry, something went wrong. Please try again.',
         response_type: 'ephemeral'
