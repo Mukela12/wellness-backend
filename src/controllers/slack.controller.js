@@ -6,10 +6,17 @@ const slackController = {
   // Handle Slack events (including verification challenge)
   async handleEvents(req, res) {
     try {
+      console.log('Slack event received:', {
+        headers: req.headers,
+        body: req.body,
+        rawBody: req.rawBody ? 'present' : 'missing'
+      });
+      
       // Handle URL verification challenge from Slack
-      if (req.body.challenge) {
+      if (req.body && req.body.challenge) {
         console.log('Slack URL verification challenge received:', req.body.challenge);
-        return res.send(req.body.challenge);
+        // Return just the challenge value as plain text
+        return res.type('text/plain').send(req.body.challenge);
       }
 
       // For now, skip signature verification to handle the challenge
