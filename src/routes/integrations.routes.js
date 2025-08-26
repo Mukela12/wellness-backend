@@ -1,10 +1,10 @@
 const express = require('express');
 const router = express.Router();
 const integrationsController = require('../controllers/integrations.controller');
-const auth = require('../middleware/auth');
+const { authenticate } = require('../middleware/auth');
 
 // All routes require authentication
-router.use(auth);
+router.use(authenticate);
 
 // Get integration status for current user
 router.get('/status', integrationsController.getIntegrationStatus);
