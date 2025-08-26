@@ -71,10 +71,7 @@ const slackController = {
 
       const { command, text, user_id, response_url } = req.body;
       
-      // Acknowledge the command immediately
-      res.status(200).send();
-
-      // Process the command asynchronously
+      // Process the command and respond immediately
       let result;
       
       switch (command) {
@@ -88,9 +85,14 @@ const slackController = {
           result = await slackService.handleSlashCommand(command, text, user_id, response_url);
       }
 
-      // Send response back to Slack if needed
-      if (response_url && result) {
-        await slackService.sendDelayedResponse(response_url, result);
+      // Send immediate response
+      if (result) {
+        res.status(200).json(result);
+      } else {
+        res.status(200).json({
+          text: 'Command received',
+          response_type: 'ephemeral'
+        });
       }
     } catch (error) {
       console.error('Slack command error:', error);

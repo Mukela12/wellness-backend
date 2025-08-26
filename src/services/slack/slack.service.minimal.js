@@ -47,7 +47,15 @@ class SlackService {
 
   async sendDelayedResponse(responseUrl, message) {
     console.log('Slack delayed response disabled - install dependencies to enable');
-    return true;
+    // Try to send response using axios which is already installed
+    try {
+      const axios = require('axios');
+      await axios.post(responseUrl, message);
+      return true;
+    } catch (error) {
+      console.error('Error sending delayed response:', error);
+      return false;
+    }
   }
 
   getStatus() {
