@@ -764,9 +764,17 @@ class SlackSurveyService {
       const action = actions[0];
       const mood = parseInt(action.action_id.split('_').pop());
       
+      console.log('Quick mood response:', {
+        slackUserId: user.id,
+        mood: mood,
+        action: action.action_id
+      });
+      
       const slackUser = await User.findOne({ 'integrations.slack.userId': user.id });
       if (!slackUser) {
+        console.log('User not found for Slack ID:', user.id);
         return {
+          response_action: 'update',
           text: 'User not found. Please connect your Slack account.',
           response_type: 'ephemeral'
         };
@@ -796,13 +804,20 @@ class SlackSurveyService {
 
       const moodEmoji = ['😔', '😕', '😐', '🙂', '😊'][mood - 1];
       
+      console.log('Check-in created successfully:', {
+        userId: slackUser._id,
+        mood: mood,
+        happyCoins: slackUser.wellness.happyCoins
+      });
+      
       return {
         response_action: 'update',
         text: `Thanks for checking in! ${moodEmoji}\n\n📊 Your mood: ${mood}/5\n💰 Happy Coins earned: +25\n💎 Total coins: ${slackUser.wellness.happyCoins}\n🔥 Current streak: ${slackUser.wellness.currentStreak} days\n\n${mood <= 2 ? '🤗 Remember, it\'s okay to have tough days. Consider reaching out to someone or taking a break.' : 'Keep up the great work! 💪'}`
       };
     } catch (error) {
-      console.error('Error handling quick mood response:', error);
+      console.error('Error handling quick mood response:', error.message, error.stack);
       return {
+        response_action: 'update',
         text: 'Sorry, there was an error recording your check-in. Please try again.'
       };
     }
