@@ -1,0 +1,68 @@
+{
+    "_metadata": {
+        "major_version": 2,
+        "minor_version": 0
+    },
+    "display_information": {
+        "name": "Wellness Survey Bot",
+        "description": "Deliver wellness surveys and collect employee feedback directly in Slack",
+        "background_color": "#4A5568",
+        "long_description": "The Wellness Survey Bot helps HR teams and managers send pulse surveys, wellness check-ins, and custom surveys directly to employees in Slack. Employees can respond without leaving their workspace, making engagement easier and increasing response rates."
+    },
+    "features": {
+        "bot_user": {
+            "display_name": "Wellness Bot",
+            "always_online": true
+        },
+        "slash_commands": [
+            {
+                "command": "/wellness-survey",
+                "url": "https://your-backend-url.com/api/slack/commands",
+                "description": "Take a wellness survey",
+                "usage_hint": "[survey-id]",
+                "should_escape": false
+            },
+            {
+                "command": "/quick-checkin",
+                "url": "https://your-backend-url.com/api/slack/commands",
+                "description": "Quick mood check-in",
+                "should_escape": false
+            }
+        ]
+    },
+    "oauth_config": {
+        "redirect_urls": [
+            "https://your-backend-url.com/api/slack/oauth/callback"
+        ],
+        "scopes": {
+            "bot": [
+                "channels:read",
+                "chat:write",
+                "commands",
+                "groups:read",
+                "im:read",
+                "im:write",
+                "im:history",
+                "users:read",
+                "users:read.email",
+                "team:read"
+            ]
+        }
+    },
+    "settings": {
+        "event_subscriptions": {
+            "request_url": "https://your-backend-url.com/api/slack/events",
+            "bot_events": [
+                "app_mention",
+                "message.im"
+            ]
+        },
+        "interactivity": {
+            "is_enabled": true,
+            "request_url": "https://your-backend-url.com/api/slack/interactions"
+        },
+        "org_deploy_enabled": false,
+        "socket_mode_enabled": false,
+        "token_rotation_enabled": false
+    }
+}

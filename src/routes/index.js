@@ -18,6 +18,7 @@ const quotesRoutes = require('./quotes.routes');
 const leaderboardRoutes = require('./leaderboard.routes');
 const wordAnalyticsRoutes = require('./wordAnalytics.routes');
 const employeeManagementRoutes = require('./employeeManagement.routes');
+const slackRoutes = require('./slack.routes');
 
 const router = express.Router();
 
@@ -216,6 +217,12 @@ router.get('/', (req, res) => {
           'PATCH /api/users/:id/role': 'Update user role (Admin only)',
           'DELETE /api/users/:id': 'Delete user (Admin only)'
         },
+        slack: {
+          'POST /api/slack/events': 'Handle Slack events and URL verification (Slack webhook)',
+          'POST /api/slack/commands': 'Handle Slack slash commands (Slack webhook)',
+          'POST /api/slack/interactions': 'Handle Slack interactive components (Slack webhook)',
+          'GET /api/slack/oauth/callback': 'Handle OAuth callback for Slack app installation'
+        },
         health: {
           'GET /health': 'Health check endpoint'
         }
@@ -256,6 +263,7 @@ router.use('/quotes', quotesRoutes);
 router.use('/leaderboard', leaderboardRoutes);
 router.use('/word-analytics', wordAnalyticsRoutes);
 router.use('/employee-management', employeeManagementRoutes);
+router.use('/slack', slackRoutes);
 
 // User management routes (Admin only)
 router.use('/users', require('./user.routes'));
