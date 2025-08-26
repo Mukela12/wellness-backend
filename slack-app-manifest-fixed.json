@@ -24,7 +24,7 @@
             },
             {
                 "command": "/quick-checkin",
-                "url": "https://wellness-backend-production-48b1.up.railway.app/api/slack-debug/debug-commands",
+                "url": "https://wellness-backend-production-48b1.up.railway.app/api/slack/commands",
                 "description": "Quick mood check-in",
                 "should_escape": false
             }
