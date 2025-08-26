@@ -99,6 +99,15 @@ app.get('/health', (req, res) => {
   });
 });
 
+// Slack URL verification test (bypass all middleware)
+app.post('/slack-verify-test', (req, res) => {
+  console.log('Slack verify test received:', req.body);
+  if (req.body && req.body.challenge) {
+    return res.type('text/plain').send(req.body.challenge);
+  }
+  res.json({ message: 'Send a POST with {"challenge": "value"}' });
+});
+
 // API routes
 app.use('/api', require('./routes'));
 
