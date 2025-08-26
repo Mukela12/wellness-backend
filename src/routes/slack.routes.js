@@ -10,6 +10,15 @@ router.get('/test', (req, res) => {
   });
 });
 
+// Direct test for commands
+router.post('/commands-test', (req, res) => {
+  console.log('Commands test endpoint hit');
+  res.json({
+    response_type: 'ephemeral',
+    text: 'Commands test endpoint working'
+  });
+});
+
 // Middleware to capture raw body for signature verification
 const rawBodyMiddleware = (req, res, next) => {
   let data = '';

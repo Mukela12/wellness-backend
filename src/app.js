@@ -71,6 +71,15 @@ if (process.env.NODE_ENV === 'development') {
   app.use(morgan('combined'));
 }
 
+// Log all incoming requests for debugging
+app.use((req, res, next) => {
+  console.log(`[${new Date().toISOString()}] ${req.method} ${req.url}`);
+  if (req.url.includes('slack')) {
+    console.log('Slack request headers:', req.headers);
+  }
+  next();
+});
+
 // Rate limiting middleware
 const limiter = rateLimit({
   windowMs: RATE_LIMITS.WINDOW_MS,
