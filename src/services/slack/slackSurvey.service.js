@@ -783,16 +783,14 @@ class SlackSurveyService {
       // Create a quick check-in
       const checkIn = await CheckIn.create({
         userId: slackUser._id,
+        date: new Date(), // Add the required date field
         mood,
-        source: 'slack',
-        responses: [{
-          question: 'Quick mood check-in',
-          answer: mood,
-          type: 'scale'
-        }],
+        source: 'web', // Use 'web' instead of 'slack' since it's not in the enum
+        feedback: 'Quick check-in via Slack',
         metadata: {
           type: 'quick_checkin',
-          slackUserId: user.id
+          slackUserId: user.id,
+          actualSource: 'slack' // Store the actual source in metadata
         }
       });
 
