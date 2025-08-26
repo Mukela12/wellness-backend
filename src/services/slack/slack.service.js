@@ -1,4 +1,4 @@
-const axios = require('axios');
+const { WebClient } = require('@slack/web-api');
 const crypto = require('crypto');
 const User = require('../../models/User');
 const Survey = require('../../models/Survey');
@@ -12,12 +12,13 @@ class SlackService {
     this.botToken = process.env.SLACK_BOT_TOKEN;
     this.redirectUri = process.env.SLACK_REDIRECT_URI;
     
-    this.apiUrl = 'https://slack.com/api';
+    // Initialize Slack Web API client
+    this.client = new WebClient(this.botToken);
     
     if (!this.clientId || !this.clientSecret || !this.signingSecret) {
       console.warn('⚠️ Slack Service: Missing required environment variables');
     } else {
-      console.log('✅ Slack service initialized');
+      console.log('✅ Slack service initialized with Web API client');
     }
   }
 
@@ -55,22 +56,20 @@ class SlackService {
   // OAuth flow - exchange code for token
   async handleOAuthCallback(code) {
     try {
-      const response = await axios.post(`${this.apiUrl}/oauth.v2.access`, null, {
-        params: {
-          client_id: this.clientId,
-          client_secret: this.clientSecret,
-          code: code,
-          redirect_uri: this.redirectUri
-        }
+      const result = await this.client.oauth.v2.access({
+        client_id: this.clientId,
+        client_secret: this.clientSecret,
+        code: code,
+        redirect_uri: this.redirectUri
       });
       
-      if (!response.data.ok) {
-        throw new Error(response.data.error || 'OAuth failed');
+      if (!result.ok) {
+        throw new Error(result.error || 'OAuth failed');
       }
       
       // Store the access token and other details
       // In production, encrypt and store securely
-      const { access_token, team, authed_user, bot_user_id } = response.data;
+      const { access_token, team, authed_user, bot_user_id } = result;
       
       return {
         accessToken: access_token,
@@ -100,18 +99,13 @@ class SlackService {
         payload.blocks = blocks;
       }
       
-      const response = await axios.post(`${this.apiUrl}/chat.postMessage`, payload, {
-        headers: {
-          'Authorization': `Bearer ${this.botToken}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      const result = await this.client.chat.postMessage(payload);
       
-      if (!response.data.ok) {
-        throw new Error(response.data.error || 'Failed to send message');
+      if (!result.ok) {
+        throw new Error(result.error || 'Failed to send message');
       }
       
-      return response.data;
+      return result;
     } catch (error) {
       console.error('Slack send message error:', error);
       throw error;
@@ -121,20 +115,15 @@ class SlackService {
   // Open a conversation with a user
   async openConversation(userId) {
     try {
-      const response = await axios.post(`${this.apiUrl}/conversations.open`, {
+      const result = await this.client.conversations.open({
         users: userId
-      }, {
-        headers: {
-          'Authorization': `Bearer ${this.botToken}`,
-          'Content-Type': 'application/json'
-        }
       });
       
-      if (!response.data.ok) {
-        throw new Error(response.data.error || 'Failed to open conversation');
+      if (!result.ok) {
+        throw new Error(result.error || 'Failed to open conversation');
       }
       
-      return response.data;
+      return result;
     } catch (error) {
       console.error('Slack open conversation error:', error);
       throw error;
@@ -606,18 +595,15 @@ class SlackService {
   // Get Slack user info
   async getSlackUserInfo(slackUserId) {
     try {
-      const response = await axios.get(`${this.apiUrl}/users.info`, {
-        params: { user: slackUserId },
-        headers: {
-          'Authorization': `Bearer ${this.botToken}`
-        }
+      const result = await this.client.users.info({
+        user: slackUserId
       });
       
-      if (!response.data.ok) {
-        throw new Error(response.data.error || 'Failed to get user info');
+      if (!result.ok) {
+        throw new Error(result.error || 'Failed to get user info');
       }
       
-      return response.data.user;
+      return result.user;
     } catch (error) {
       console.error('Get Slack user info error:', error);
       throw error;
@@ -720,18 +706,13 @@ class SlackService {
         payload.blocks = blocks;
       }
       
-      const response = await axios.post(`${this.apiUrl}/chat.postMessage`, payload, {
-        headers: {
-          'Authorization': `Bearer ${this.botToken}`,
-          'Content-Type': 'application/json'
-        }
-      });
+      const result = await this.client.chat.postMessage(payload);
       
-      if (!response.data.ok) {
-        throw new Error(response.data.error || 'Failed to send message');
+      if (!result.ok) {
+        throw new Error(result.error || 'Failed to send message');
       }
       
-      return response.data;
+      return result;
     } catch (error) {
       console.error('Slack send message error:', error);
       throw error;
@@ -741,6 +722,7 @@ class SlackService {
   // Send delayed response (for slash commands and interactions)
   async sendDelayedResponse(responseUrl, message) {
     try {
+      const axios = require('axios');
       await axios.post(responseUrl, message);
     } catch (error) {
       console.error('Slack delayed response error:', error);

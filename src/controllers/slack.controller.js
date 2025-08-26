@@ -1,5 +1,4 @@
-// Temporarily use minimal service until dependencies are installed
-const slackService = require('../services/slack/slack.service.minimal');
+const slackService = require('../services/slack/slack.service');
 const slackSurveyService = require('../services/slack/slackSurvey.service');
 const { sendSuccessResponse, sendErrorResponse } = require('../utils/responseUtils');
 
@@ -20,15 +19,11 @@ const slackController = {
         return res.type('text/plain').send(req.body.challenge);
       }
 
-      // For now, skip signature verification to handle the challenge
-      // TODO: Re-enable verification after installing dependencies
-      /*
-      // Verify the request is from Slack
-      if (!slackService.verifySlackRequest(req)) {
+      // Verify the request is from Slack (skip for challenge)
+      if (!req.body.challenge && !slackService.verifySlackRequest(req)) {
         console.error('Invalid Slack request signature');
         return res.status(401).send('Unauthorized');
       }
-      */
 
       // Handle different event types
       const { type, event } = req.body;
@@ -60,14 +55,10 @@ const slackController = {
   // Handle slash commands
   async handleCommands(req, res) {
     try {
-      // For now, skip signature verification
-      // TODO: Re-enable verification after installing dependencies
-      /*
       // Verify the request is from Slack
       if (!slackService.verifySlackRequest(req)) {
         return res.status(401).send('Unauthorized');
       }
-      */
 
       const { command, text, user_id, response_url } = req.body;
       
@@ -109,15 +100,11 @@ const slackController = {
       // Parse the payload
       const payload = JSON.parse(req.body.payload);
       
-      // For now, skip signature verification
-      // TODO: Re-enable verification after installing dependencies
-      /*
       // Verify the request is from Slack
       req.body = payload; // Replace body with parsed payload for verification
       if (!slackService.verifySlackRequest(req)) {
         return res.status(401).send('Unauthorized');
       }
-      */
 
       // Acknowledge the interaction immediately
       res.status(200).send();
