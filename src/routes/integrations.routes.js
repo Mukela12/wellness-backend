@@ -14,6 +14,9 @@ router.get('/slack/oauth-url', integrationsController.getSlackOAuthUrl);
 router.post('/slack/connect', integrationsController.connectSlack);
 router.post('/slack/disconnect', integrationsController.disconnectSlack);
 
+// Quick connect for testing (no auth required temporarily)
+router.post('/slack/quick-connect', integrationsController.quickConnectSlack);
+
 // Notification preferences
 router.patch('/notifications/preferences', integrationsController.updateNotificationPreferences);
 

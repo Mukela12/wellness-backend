@@ -37,6 +37,46 @@ const integrationsController = {
     }
   },
 
+  // Quick connect for testing - connects by email
+  async quickConnectSlack(req, res) {
+    try {
+      const { email, slackUserId } = req.body;
+      
+      if (!email || !slackUserId) {
+        return sendErrorResponse(res, 'Email and slackUserId are required', 400);
+      }
+
+      const user = await User.findOne({ email });
+      if (!user) {
+        return sendErrorResponse(res, 'User with this email not found', 404);
+      }
+
+      // Update user's Slack integration
+      user.integrations = user.integrations || {};
+      user.integrations.slack = {
+        userId: slackUserId,
+        teamId: 'T09CHTAT449', // Your team ID
+        teamName: 'Fluxium',
+        isConnected: true,
+        connectedAt: new Date()
+      };
+
+      await user.save();
+
+      sendSuccessResponse(res, {
+        message: 'Slack account connected successfully',
+        data: {
+          user: user.name,
+          email: user.email,
+          slack: user.integrations.slack
+        }
+      });
+    } catch (error) {
+      console.error('Quick connect Slack error:', error);
+      sendErrorResponse(res, 'Failed to connect Slack account', 500);
+    }
+  },
+
   // Disconnect Slack account
   async disconnectSlack(req, res) {
     try {
