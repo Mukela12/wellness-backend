@@ -780,6 +780,16 @@ class SlackSurveyService {
         };
       }
 
+      // Check if user already has a check-in for today
+      const existingCheckIn = await CheckIn.findTodaysCheckIn(slackUser._id);
+      if (existingCheckIn) {
+        const moodEmoji = ['😔', '😕', '😐', '🙂', '😊'][existingCheckIn.mood - 1];
+        return {
+          response_action: 'update',
+          text: `You've already checked in today! ${moodEmoji}\n\n📊 Today's mood: ${existingCheckIn.mood}/5\n💎 Total coins: ${slackUser.wellness.happyCoins}\n🔥 Current streak: ${slackUser.wellness.currentStreak} days\n\nCome back tomorrow for your next check-in! 🌟`
+        };
+      }
+
       // Create a quick check-in
       const checkIn = await CheckIn.create({
         userId: slackUser._id,
@@ -814,6 +824,20 @@ class SlackSurveyService {
       };
     } catch (error) {
       console.error('Error handling quick mood response:', error.message, error.stack);
+      
+      // Handle duplicate key error specifically
+      if (error.code === 11000 && error.message.includes('checkins')) {
+        const slackUser = await User.findOne({ 'integrations.slack.userId': user.id });
+        const existingCheckIn = await CheckIn.findTodaysCheckIn(slackUser._id);
+        if (existingCheckIn) {
+          const moodEmoji = ['😔', '😕', '😐', '🙂', '😊'][existingCheckIn.mood - 1];
+          return {
+            response_action: 'update',
+            text: `You've already checked in today! ${moodEmoji}\n\n📊 Today's mood: ${existingCheckIn.mood}/5\n💎 Total coins: ${slackUser.wellness.happyCoins}\n🔥 Current streak: ${slackUser.wellness.currentStreak} days\n\nCome back tomorrow for your next check-in! 🌟`
+          };
+        }
+      }
+      
       return {
         response_action: 'update',
         text: 'Sorry, there was an error recording your check-in. Please try again.'
