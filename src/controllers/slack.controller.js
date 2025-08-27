@@ -62,14 +62,14 @@ const slackController = {
         channel_id: req.body.channel_id
       });
       
-      // Skip verification for now to test
-      // TODO: Re-enable after testing
-      /*
+      // Verify Slack request signature
       if (!slackService.verifySlackRequest(req)) {
-        console.error('Failed signature verification');
-        return res.status(401).send('Unauthorized');
+        console.error('Failed Slack signature verification');
+        return res.status(401).json({
+          response_type: 'ephemeral',
+          text: 'Request verification failed'
+        });
       }
-      */
 
       const { command, text, user_id, response_url, team_id, channel_id } = req.body;
       
@@ -118,8 +118,12 @@ const slackController = {
       // Parse the payload
       const payload = JSON.parse(req.body.payload);
       
-      // Skip verification for now
-      // TODO: Fix verification for interactions
+      // Verify Slack request signature for interactions
+      if (!slackService.verifySlackRequest(req)) {
+        console.error('Failed Slack signature verification for interaction');
+        return res.status(401).send('Unauthorized');
+      }
+      
       console.log('Interaction received:', {
         type: payload.type,
         user: payload.user?.id,

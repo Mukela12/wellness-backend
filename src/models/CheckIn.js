@@ -46,7 +46,7 @@ const checkInSchema = new mongoose.Schema({
   source: {
     type: String,
     enum: {
-      values: ['web', 'whatsapp', 'mobile'],
+      values: ['web', 'whatsapp', 'mobile', 'slack'],
       message: '{VALUE} is not a valid source'
     },
     default: 'web'
