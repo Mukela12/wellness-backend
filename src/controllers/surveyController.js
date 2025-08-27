@@ -364,6 +364,215 @@ const surveyController = {
     }
   },
 
+  async distributeSurvey(req, res) {
+    try {
+      const { id } = req.params;
+      const { recipientType, recipientIds, channels = ['email', 'slack'], scheduledFor } = req.body;
+
+      // Check authorization
+      if (req.user.role !== 'hr' && req.user.role !== 'admin') {
+        return sendErrorResponse(res, 'Only HR and Admin can distribute surveys', 403);
+      }
+
+      // Find the survey
+      const survey = await Survey.findById(id);
+      if (!survey) {
+        return sendErrorResponse(res, 'Survey not found', 404);
+      }
+
+      if (!survey.isActive) {
+        return sendErrorResponse(res, 'Survey must be active to distribute', 400);
+      }
+
+      // Determine recipients
+      let recipients = [];
+      
+      if (recipientType === 'all') {
+        // Send to all active employees
+        recipients = await User.find({ 
+          isActive: true,
+          role: { $in: ['employee', 'manager'] }
+        }).select('_id email name department integrations.slack');
+      } else if (recipientType === 'departments') {
+        // Send to specific departments
+        recipients = await User.find({ 
+          isActive: true,
+          department: { $in: recipientIds },
+          role: { $in: ['employee', 'manager'] }
+        }).select('_id email name department integrations.slack');
+      } else if (recipientType === 'individuals') {
+        // Send to specific individuals
+        recipients = await User.find({ 
+          isActive: true,
+          _id: { $in: recipientIds }
+        }).select('_id email name department integrations.slack');
+      } else {
+        return sendErrorResponse(res, 'Invalid recipient type', 400);
+      }
+
+      if (recipients.length === 0) {
+        return sendErrorResponse(res, 'No valid recipients found', 400);
+      }
+
+      // Track distribution
+      const distributionRecord = {
+        surveyId: survey._id,
+        distributedBy: req.user.id,
+        distributedAt: scheduledFor ? new Date(scheduledFor) : new Date(),
+        recipientType,
+        recipientCount: recipients.length,
+        channels,
+        status: scheduledFor ? 'scheduled' : 'in_progress'
+      };
+
+      // If scheduled for later, save to scheduler
+      if (scheduledFor && new Date(scheduledFor) > new Date()) {
+        const surveyScheduler = require('../services/survey.scheduler');
+        await surveyScheduler.scheduleSurveyDistribution({
+          ...distributionRecord,
+          recipients: recipients.map(r => r._id)
+        });
+        
+        return sendSuccessResponse(res, {
+          message: 'Survey distribution scheduled successfully',
+          data: {
+            surveyId: survey._id,
+            scheduledFor: scheduledFor,
+            recipientCount: recipients.length,
+            channels
+          }
+        });
+      }
+
+      // Distribute immediately
+      const notificationService = require('../services/notifications/notification.service');
+      const slackSurveyService = require('../services/slack/slackSurvey.service');
+      
+      let successCount = 0;
+      let failureCount = 0;
+      const errors = [];
+
+      // Process each recipient
+      for (const recipient of recipients) {
+        try {
+          const channelResults = [];
+          
+          // Send via email if enabled
+          if (channels.includes('email')) {
+            try {
+              await notificationService.create({
+                userId: recipient._id,
+                title: `New Survey: ${survey.title}`,
+                message: survey.description,
+                type: 'survey',
+                channel: 'email',
+                metadata: {
+                  surveyId: survey._id,
+                  surveyTitle: survey.title,
+                  estimatedTime: survey.estimatedTime,
+                  rewards: survey.rewards
+                }
+              });
+              channelResults.push({ channel: 'email', success: true });
+            } catch (emailError) {
+              channelResults.push({ channel: 'email', success: false, error: emailError.message });
+            }
+          }
+
+          // Send via Slack if enabled and connected
+          if (channels.includes('slack') && recipient.integrations?.slack?.isConnected) {
+            try {
+              await slackSurveyService.sendSurveyToUser(recipient._id, survey._id);
+              channelResults.push({ channel: 'slack', success: true });
+            } catch (slackError) {
+              channelResults.push({ channel: 'slack', success: false, error: slackError.message });
+            }
+          }
+
+          // Count as success if at least one channel succeeded
+          if (channelResults.some(r => r.success)) {
+            successCount++;
+          } else {
+            failureCount++;
+            errors.push({
+              recipientId: recipient._id,
+              recipientName: recipient.name,
+              errors: channelResults.filter(r => !r.success)
+            });
+          }
+        } catch (error) {
+          failureCount++;
+          errors.push({
+            recipientId: recipient._id,
+            recipientName: recipient.name,
+            error: error.message
+          });
+        }
+      }
+
+      // Update survey with distribution info
+      survey.lastDistributed = new Date();
+      survey.distributionCount = (survey.distributionCount || 0) + 1;
+      await survey.save();
+
+      sendSuccessResponse(res, {
+        message: 'Survey distributed successfully',
+        data: {
+          surveyId: survey._id,
+          surveyTitle: survey.title,
+          totalRecipients: recipients.length,
+          successCount,
+          failureCount,
+          channels,
+          errors: errors.length > 0 ? errors : undefined
+        }
+      });
+    } catch (error) {
+      console.error('Error distributing survey:', error);
+      sendErrorResponse(res, 'Failed to distribute survey', 500);
+    }
+  },
+
+  async getSurveyDistributionHistory(req, res) {
+    try {
+      const { id } = req.params;
+
+      // Check authorization
+      if (req.user.role !== 'hr' && req.user.role !== 'admin') {
+        return sendErrorResponse(res, 'Only HR and Admin can view distribution history', 403);
+      }
+
+      const survey = await Survey.findById(id)
+        .populate('createdBy', 'name')
+        .select('title type status lastDistributed distributionCount responses');
+
+      if (!survey) {
+        return sendErrorResponse(res, 'Survey not found', 404);
+      }
+
+      // Get distribution metrics
+      const distributionMetrics = {
+        surveyTitle: survey.title,
+        surveyType: survey.type,
+        status: survey.status,
+        lastDistributed: survey.lastDistributed,
+        totalDistributions: survey.distributionCount || 0,
+        totalResponses: survey.responses.length,
+        responseRate: survey.distributionCount > 0 
+          ? `${Math.round((survey.responses.length / (survey.distributionCount * 10)) * 100)}%` 
+          : '0%'
+      };
+
+      sendSuccessResponse(res, {
+        message: 'Distribution history retrieved successfully',
+        data: distributionMetrics
+      });
+    } catch (error) {
+      console.error('Error fetching distribution history:', error);
+      sendErrorResponse(res, 'Failed to fetch distribution history', 500);
+    }
+  },
+
   async getPulseSurveyTemplates(req, res) {
     try {
       const templates = [

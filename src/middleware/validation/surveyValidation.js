@@ -105,7 +105,57 @@ const validateSurveyResponse = [
   }
 ];
 
+const validateSurveyDistribution = [
+  body('recipientType')
+    .isIn(['all', 'departments', 'individuals'])
+    .withMessage('Invalid recipient type. Must be "all", "departments", or "individuals"'),
+
+  body('recipientIds')
+    .optional()
+    .isArray()
+    .withMessage('Recipient IDs must be an array')
+    .custom((value, { req }) => {
+      if (req.body.recipientType !== 'all' && (!value || value.length === 0)) {
+        throw new Error('Recipient IDs are required for selected recipient type');
+      }
+      return true;
+    }),
+
+  body('channels')
+    .optional()
+    .isArray()
+    .withMessage('Channels must be an array')
+    .custom((value) => {
+      const validChannels = ['email', 'slack'];
+      if (value && !value.every(channel => validChannels.includes(channel))) {
+        throw new Error('Invalid channel. Must be "email" or "slack"');
+      }
+      return true;
+    }),
+
+  body('scheduledFor')
+    .optional()
+    .isISO8601()
+    .withMessage('Scheduled date must be in ISO8601 format')
+    .custom((value) => {
+      if (value && new Date(value) <= new Date()) {
+        throw new Error('Scheduled date must be in the future');
+      }
+      return true;
+    }),
+
+  (req, res, next) => {
+    const errors = validationResult(req);
+    if (!errors.isEmpty()) {
+      const errorMessages = errors.array().map(error => error.msg);
+      return sendErrorResponse(res, errorMessages, 400);
+    }
+    next();
+  }
+];
+
 module.exports = {
   validateSurvey,
-  validateSurveyResponse
+  validateSurveyResponse,
+  validateSurveyDistribution
 };

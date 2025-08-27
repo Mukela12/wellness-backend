@@ -137,6 +137,23 @@ const surveySchema = new mongoose.Schema({
   isActive: {
     type: Boolean,
     default: true
+  },
+  // Distribution tracking
+  lastDistributed: {
+    type: Date
+  },
+  distributionCount: {
+    type: Number,
+    default: 0
+  },
+  estimatedTime: {
+    type: String,
+    default: '5 minutes'
+  },
+  category: {
+    type: String,
+    enum: ['wellness', 'engagement', 'feedback', 'pulse', 'other'],
+    default: 'pulse'
   }
 }, {
   timestamps: true
