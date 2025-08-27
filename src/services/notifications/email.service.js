@@ -21,10 +21,17 @@ class EmailService {
 
   async verifyConnection() {
     try {
+      // Don't verify connection if email is not configured
+      if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
+        console.warn('⚠️  Email service not configured - skipping connection verification');
+        return;
+      }
+      
       await this.transporter.verify();
       console.log('✅ Email service connected successfully');
     } catch (error) {
       console.error('❌ Email service connection failed:', error.message);
+      // Don't throw - allow the service to start even if email is unavailable
     }
   }
 

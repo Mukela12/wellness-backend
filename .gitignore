@@ -111,3 +111,20 @@ uploads/
 
 # Testing
 .jest/
+test-*.sh
+test-*.js
+*-test.js
+*-test.sh
+create-test-*.js
+seed-test-*.js
+reset-test-*.js
+
+# Temporary scripts
+create-hr-admin.js
+create-sample-*.js
+process-*.js
+src/scripts/
+
+# Server runtime
+server.log
+server.pid

@@ -46,20 +46,10 @@ router.post('/events', (req, res, next) => {
 }, slackController.handleEvents);
 
 // Slack slash commands
-router.post('/commands', express.urlencoded({ 
-  extended: true,
-  verify: (req, res, buf) => {
-    req.rawBody = buf.toString();
-  }
-}), slackController.handleCommands);
+router.post('/commands', slackController.handleCommands);
 
 // Slack interactive components
-router.post('/interactions', express.urlencoded({ 
-  extended: true,
-  verify: (req, res, buf) => {
-    req.rawBody = buf.toString();
-  }
-}), slackController.handleInteractions);
+router.post('/interactions', slackController.handleInteractions);
 
 // OAuth callback
 router.get('/oauth/callback', slackController.handleOAuthCallback);

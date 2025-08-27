@@ -14,7 +14,7 @@
   "description": "WellnessAI Platform Backend - AI-driven employee wellness platform with daily check-ins, mental health tracking, and WhatsApp integration",
   "dependencies": {
     "@sendgrid/mail": "^8.1.5",
-    "axios": "^1.11.0",
+    "@slack/web-api": "^6.12.0",
     "bcryptjs": "^3.0.2",
     "cloudinary": "^2.7.0",
     "compression": "^1.8.1",
@@ -33,14 +33,14 @@
     "nodemailer": "^6.10.1",
     "openai": "^5.10.2",
     "twilio": "^5.8.0",
-    "uuid": "^10.0.0",
-    "@slack/web-api": "^6.12.0"
+    "uuid": "^10.0.0"
   },
   "devDependencies": {
     "@babel/core": "^7.28.0",
     "@babel/node": "^7.28.0",
     "@babel/preset-env": "^7.28.0",
     "@types/node": "^24.1.0",
+    "axios": "^1.11.0",
     "eslint": "^9.31.0",
     "eslint-config-prettier": "^10.1.8",
     "nodemon": "^3.1.10",

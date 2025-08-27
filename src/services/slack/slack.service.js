@@ -28,17 +28,33 @@ class SlackService {
     const slackSignature = req.headers['x-slack-signature'];
     
     if (!timestamp || !slackSignature) {
+      console.error('Missing Slack headers:', { timestamp: !!timestamp, signature: !!slackSignature });
       return false;
     }
     
     // Check if request is older than 5 minutes
     const currentTime = Math.floor(Date.now() / 1000);
     if (Math.abs(currentTime - timestamp) > 60 * 5) {
+      console.error('Slack request timestamp too old:', { timestamp, currentTime });
       return false;
     }
     
     // Create signature base string
-    const sigBasestring = `v0:${timestamp}:${req.rawBody || JSON.stringify(req.body)}`;
+    let bodyStr;
+    if (req.rawBody) {
+      bodyStr = req.rawBody;
+    } else if (typeof req.body === 'string') {
+      bodyStr = req.body;
+    } else {
+      // Fallback: reconstruct URL-encoded body
+      const params = new URLSearchParams();
+      Object.keys(req.body).forEach(key => {
+        params.append(key, req.body[key]);
+      });
+      bodyStr = params.toString();
+    }
+    
+    const sigBasestring = `v0:${timestamp}:${bodyStr}`;
     
     // Create HMAC SHA256 hash
     const mySignature = 'v0=' + crypto
@@ -46,11 +62,25 @@ class SlackService {
       .update(sigBasestring, 'utf8')
       .digest('hex');
     
+    // Debug logging in development
+    if (process.env.NODE_ENV === 'development') {
+      console.log('Slack signature verification:', {
+        receivedSig: slackSignature,
+        calculatedSig: mySignature,
+        signingSecret: this.signingSecret ? 'present' : 'missing'
+      });
+    }
+    
     // Compare signatures
-    return crypto.timingSafeEqual(
-      Buffer.from(mySignature, 'utf8'),
-      Buffer.from(slackSignature, 'utf8')
-    );
+    try {
+      return crypto.timingSafeEqual(
+        Buffer.from(mySignature, 'utf8'),
+        Buffer.from(slackSignature, 'utf8')
+      );
+    } catch (error) {
+      console.error('Signature comparison error:', error);
+      return false;
+    }
   }
 
   // OAuth flow - exchange code for token
