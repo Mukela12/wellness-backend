@@ -2,21 +2,32 @@ const nodemailer = require('nodemailer');
 
 class EmailService {
   constructor() {
-    this.transporter = nodemailer.createTransport({
-      host: process.env.EMAIL_HOST || 'smtp.gmail.com',
-      port: parseInt(process.env.EMAIL_PORT) || 587,
-      secure: process.env.EMAIL_SECURE === 'true' || false,
-      auth: {
-        user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASS
-      },
-      tls: {
-        rejectUnauthorized: false
-      }
-    });
+    this.isConfigured = !!(process.env.EMAIL_USER && process.env.EMAIL_PASS);
+    
+    if (this.isConfigured) {
+      this.transporter = nodemailer.createTransporter({
+        host: process.env.EMAIL_HOST || 'smtp.gmail.com',
+        port: parseInt(process.env.EMAIL_PORT) || 587,
+        secure: process.env.EMAIL_SECURE === 'true' || false,
+        auth: {
+          user: process.env.EMAIL_USER,
+          pass: process.env.EMAIL_PASS
+        },
+        tls: {
+          rejectUnauthorized: false
+        },
+        // Add connection timeout settings
+        connectionTimeout: 5000, // 5 seconds
+        greetingTimeout: 5000,  // 5 seconds
+        socketTimeout: 10000    // 10 seconds
+      });
 
-    // Verify transporter configuration
-    this.verifyConnection();
+      // Verify transporter configuration
+      this.verifyConnection();
+    } else {
+      console.warn('⚠️  Email service not configured - emails will be disabled');
+      this.transporter = null;
+    }
   }
 
   async verifyConnection() {
@@ -37,6 +48,11 @@ class EmailService {
 
   // Send welcome email after registration
   async sendWelcomeEmail(user) {
+    if (!this.isConfigured) {
+      console.log('Email service not configured - skipping welcome email');
+      return { skipped: true };
+    }
+
     const mailOptions = {
       from: process.env.EMAIL_FROM || 'Welldify AI <noreply@welldify.ai>',
       to: user.email,
@@ -135,6 +151,11 @@ class EmailService {
 
   // Send email verification
   async sendEmailVerification(user, verificationToken) {
+    if (!this.isConfigured) {
+      console.log('Email service not configured - skipping verification email');
+      return { skipped: true };
+    }
+
     const verificationUrl = `${process.env.CLIENT_URL}/verify-email?token=${verificationToken}`;
     
     const mailOptions = {
@@ -219,6 +240,10 @@ class EmailService {
 
   // Send password reset email
   async sendPasswordResetEmail(user, resetToken) {
+    if (!this.isConfigured) {
+      console.log('Email service not configured - skipping password reset email');
+      return { skipped: true };
+    }
     const resetUrl = `${process.env.CLIENT_URL}/reset-password?token=${resetToken}`;
     
     const mailOptions = {
@@ -301,6 +326,10 @@ class EmailService {
 
   // Send daily check-in reminder
   async sendCheckInReminder(user) {
+    if (!this.isConfigured) {
+      console.log('Email service not configured - skipping check-in reminder');
+      return { skipped: true };
+    }
     const mailOptions = {
       from: process.env.EMAIL_FROM || 'Welldify AI <noreply@welldify.ai>',
       to: user.email,
