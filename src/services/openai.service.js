@@ -2,30 +2,49 @@ const OpenAI = require('openai');
 
 class OpenAIService {
   constructor() {
+    this.client = null;
+    this.isEnabled = false;
+    this.isVerified = false;
+    this.model = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+    this.maxTokens = parseInt(process.env.OPENAI_MAX_TOKENS) || 1000;
+  }
+
+  async initialize() {
     if (!process.env.OPENAI_API_KEY) {
       console.warn('⚠️  OpenAI API key not configured. AI features will be disabled.');
-      this.isEnabled = false;
       return;
     }
 
     try {
+      console.log('🤖 Initializing OpenAI service...');
+      
       this.client = new OpenAI({
         apiKey: process.env.OPENAI_API_KEY,
       });
-      this.model = process.env.OPENAI_MODEL || 'gpt-4o-mini';
-      this.maxTokens = parseInt(process.env.OPENAI_MAX_TOKENS) || 1000;
-      this.isEnabled = true;
-      console.log('✅ OpenAI service initialized successfully');
+      
+      // Verify the API key by making a simple request
+      console.log('🤖 Verifying OpenAI connection...');
+      const verification = await this.testConnection();
+      
+      if (verification.success) {
+        this.isEnabled = true;
+        this.isVerified = true;
+        console.log('✅ OpenAI service connected and verified successfully');
+      } else {
+        throw new Error(verification.error);
+      }
     } catch (error) {
-      console.error('❌ Failed to initialize OpenAI service:', error.message);
+      console.error('❌ OpenAI service initialization failed:', error.message);
+      console.warn('⚠️  AI features will be disabled');
       this.isEnabled = false;
+      this.isVerified = false;
     }
   }
 
   // Test OpenAI API connection
   async testConnection() {
-    if (!this.isEnabled) {
-      return { success: false, error: 'OpenAI service not enabled' };
+    if (!this.client) {
+      return { success: false, error: 'OpenAI client not initialized' };
     }
 
     try {

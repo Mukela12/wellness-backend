@@ -4,16 +4,31 @@ const connectDB = require('./config/database');
 const whatsappScheduledJobs = require('./services/whatsapp/scheduledJobs');
 const surveyScheduler = require('./services/survey.scheduler');
 const emailService = require('./services/notifications/email.service');
+const openAIService = require('./services/openai.service');
+const whatsappService = require('./services/whatsapp/whatsapp.service');
+const slackService = require('./services/slack/slack.service');
 
 const PORT = process.env.PORT || 5000;
 
 // Initialize services asynchronously
 async function initializeServices() {
+  console.log('\n🚀 Starting service initialization...\n');
+  
   // Connect to MongoDB
   await connectDB();
   
-  // Initialize email service
-  await emailService.initialize();
+  // Initialize all services in parallel for faster startup
+  const servicePromises = [
+    emailService.initialize(),
+    openAIService.initialize(),
+    whatsappService.initialize(),
+    slackService.initialize()
+  ];
+  
+  // Wait for all services to initialize
+  await Promise.allSettled(servicePromises);
+  
+  console.log('\n✅ All services initialization completed\n');
 }
 
 // Start server with async initialization

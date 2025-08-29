@@ -12,13 +12,43 @@ class SlackService {
     this.botToken = process.env.SLACK_BOT_TOKEN;
     this.redirectUri = process.env.SLACK_REDIRECT_URI;
     
-    // Initialize Slack Web API client
-    this.client = new WebClient(this.botToken);
-    
+    this.client = null;
+    this.isConfigured = false;
+    this.isVerified = false;
+  }
+
+  async initialize() {
     if (!this.clientId || !this.clientSecret || !this.signingSecret) {
       console.warn('⚠️ Slack Service: Missing required environment variables');
-    } else {
-      console.log('✅ Slack service initialized with Web API client');
+      return;
+    }
+
+    try {
+      console.log('💡 Initializing Slack service...');
+      
+      // Initialize Slack Web API client
+      this.client = new WebClient(this.botToken);
+      
+      if (this.botToken) {
+        // Verify the bot token by testing authentication
+        console.log('💡 Verifying Slack connection...');
+        const auth = await this.client.auth.test();
+        
+        this.isConfigured = true;
+        this.isVerified = true;
+        console.log('✅ Slack service connected and verified successfully');
+        console.log(`💡 Bot User: ${auth.user} in workspace: ${auth.team}`);
+      } else {
+        // OAuth mode - no bot token yet
+        this.isConfigured = true;
+        this.isVerified = false;
+        console.log('💡 Slack OAuth configured (awaiting workspace installations)');
+      }
+    } catch (error) {
+      console.error('❌ Slack service initialization failed:', error.message);
+      console.warn('⚠️  Slack functionality will be limited');
+      this.isConfigured = false;
+      this.isVerified = false;
     }
   }
 

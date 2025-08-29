@@ -13,10 +13,40 @@ class WhatsAppService {
     // Test number for development - use your verified Hong Kong number
     this.testPhoneNumber = process.env.NODE_ENV === 'development' ? '+85256928497' : null;
     
+    this.isConfigured = false;
+    this.isVerified = false;
+  }
+
+  async initialize() {
     if (!this.accessToken || !this.phoneNumberId) {
       console.warn('⚠️  WhatsApp Service: Missing required environment variables');
-    } else {
-      console.log('✅ WhatsApp service initialized');
+      return;
+    }
+
+    try {
+      console.log('📱 Initializing WhatsApp service...');
+      
+      // Verify the service by checking phone number details
+      console.log('📱 Verifying WhatsApp connection...');
+      
+      const url = `${this.apiUrl}/${this.phoneNumberId}`;
+      const response = await axios.get(url, {
+        headers: {
+          'Authorization': `Bearer ${this.accessToken}`
+        }
+      });
+      
+      if (response.data) {
+        this.isConfigured = true;
+        this.isVerified = true;
+        console.log('✅ WhatsApp service connected and verified successfully');
+        console.log(`📱 Phone Number: ${response.data.display_phone_number || 'N/A'}`);
+      }
+    } catch (error) {
+      console.error('❌ WhatsApp service initialization failed:', error.message);
+      console.warn('⚠️  WhatsApp functionality will be limited');
+      this.isConfigured = true; // Still allow sending, but not verified
+      this.isVerified = false;
     }
   }
 
