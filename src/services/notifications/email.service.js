@@ -17,7 +17,14 @@ class EmailService {
     try {
       console.log('📧 Initializing email service...');
       
-      // Create transporter
+      // Log environment for debugging
+      if (process.env.RAILWAY_ENVIRONMENT) {
+        console.log('🚂 Running on Railway environment');
+        console.log('- Using port:', process.env.EMAIL_PORT || 587);
+        console.log('- Secure:', process.env.EMAIL_SECURE || 'false');
+      }
+      
+      // Create transporter with Railway-optimized settings
       this.transporter = nodemailer.createTransport({
         host: process.env.EMAIL_HOST || 'smtp.gmail.com',
         port: parseInt(process.env.EMAIL_PORT) || 587,
@@ -26,21 +33,31 @@ class EmailService {
           user: process.env.EMAIL_USER,
           pass: process.env.EMAIL_PASS
         },
+        // Force IPv4 (Railway might have IPv6 issues)
+        dnsOptions: {
+          preferIPv4: true,
+          ipv4first: true
+        },
         tls: {
-          rejectUnauthorized: false
+          rejectUnauthorized: false,
+          minVersion: 'TLSv1.2'
         },
         // Optimized settings for Railway
-        connectionTimeout: 15000, // 15 seconds
-        greetingTimeout: 15000,  // 15 seconds  
-        socketTimeout: 30000,    // 30 seconds
+        connectionTimeout: 25000, // 25 seconds (increased)
+        greetingTimeout: 25000,  // 25 seconds (increased)
+        socketTimeout: 45000,    // 45 seconds (increased)
         // Pool settings for better performance
         pool: true,
-        maxConnections: 2,
+        maxConnections: 1,       // Reduced for Railway
         maxMessages: 100,
-        rateLimit: 10,
-        rateDelta: 1000,
-        logger: false,
-        debug: false
+        rateLimit: 5,           // Reduced rate limit
+        rateDelta: 2000,        // Increased rate delta
+        logger: process.env.NODE_ENV === 'development',
+        debug: process.env.NODE_ENV === 'development',
+        // Additional settings for better compatibility
+        ignoreTLS: false,
+        requireTLS: true,
+        authMethod: 'PLAIN'
       });
 
       // Verify connection
