@@ -2,13 +2,26 @@ const nodemailer = require('nodemailer');
 
 class EmailService {
   constructor() {
+    this.transporter = null;
     this.isConfigured = !!(process.env.EMAIL_USER && process.env.EMAIL_PASS);
-    
-    if (this.isConfigured) {
+    this.isVerified = false;
+    this.verificationAttempted = false;
+  }
+
+  async initialize() {
+    if (!this.isConfigured) {
+      console.warn('⚠️  Email service not configured - emails will be disabled');
+      return;
+    }
+
+    try {
+      console.log('📧 Initializing email service...');
+      
+      // Create transporter
       this.transporter = nodemailer.createTransport({
         host: process.env.EMAIL_HOST || 'smtp.gmail.com',
         port: parseInt(process.env.EMAIL_PORT) || 587,
-        secure: process.env.EMAIL_SECURE === 'true' || false,
+        secure: process.env.EMAIL_SECURE === 'true',
         auth: {
           user: process.env.EMAIL_USER,
           pass: process.env.EMAIL_PASS
@@ -16,74 +29,63 @@ class EmailService {
         tls: {
           rejectUnauthorized: false
         },
-        // Increase timeouts for Railway environment
-        connectionTimeout: 30000, // 30 seconds
-        greetingTimeout: 30000,  // 30 seconds  
-        socketTimeout: 60000,    // 60 seconds
-        // Add additional settings for better compatibility
-        logger: false,
-        debug: false,
+        // Optimized settings for Railway
+        connectionTimeout: 15000, // 15 seconds
+        greetingTimeout: 15000,  // 15 seconds  
+        socketTimeout: 30000,    // 30 seconds
+        // Pool settings for better performance
         pool: true,
-        maxConnections: 1,
-        maxMessages: 3,
-        rateLimit: true,
+        maxConnections: 2,
+        maxMessages: 100,
+        rateLimit: 10,
         rateDelta: 1000,
-        rateLimit: 10
+        logger: false,
+        debug: false
       });
 
-      // Skip verification at startup - verify only when sending emails
-      console.log('📧 Email service initialized (verification deferred)');
+      // Verify connection
+      console.log('📧 Verifying email connection...');
+      await this.transporter.verify();
+      this.isVerified = true;
+      console.log('✅ Email service connected and verified successfully');
       
-      // Set up connection pool events
+      // Set up pool events
       this.transporter.on('idle', () => {
-        console.log('📧 Email connection pool is idle');
+        if (process.env.NODE_ENV === 'development') {
+          console.log('📧 Email connection pool is idle');
+        }
       });
-    } else {
-      console.warn('⚠️  Email service not configured - emails will be disabled');
-      this.transporter = null;
+      
+    } catch (error) {
+      console.error('❌ Email service initialization failed:', error.message);
+      console.warn('⚠️  Email functionality will be degraded but server will continue');
+      
+      // Keep the transporter for retry attempts during runtime
+      // but mark as not verified
+      this.isVerified = false;
+    } finally {
+      this.verificationAttempted = true;
     }
   }
 
-  // Ensure transporter is ready before sending
-  async ensureTransporter() {
-    if (!this.isConfigured) {
-      throw new Error('Email service not configured');
+  // Lazy verification - verify on first send if not already verified
+  async verifyIfNeeded() {
+    if (!this.isConfigured || !this.transporter) {
+      return false;
     }
     
-    if (!this.transporter) {
-      throw new Error('Email transporter not initialized');
+    if (this.isVerified) {
+      return true;
     }
     
-    // Test connection before sending (with retry)
     try {
       await this.transporter.verify();
+      this.isVerified = true;
+      console.log('✅ Email connection verified on demand');
       return true;
     } catch (error) {
-      console.warn('Email connection verification failed, retrying...', error.message);
-      // Try one more time with a fresh connection
-      try {
-        await this.transporter.verify();
-        return true;
-      } catch (retryError) {
-        console.error('Email connection retry failed:', retryError.message);
-        throw retryError;
-      }
-    }
-  }
-
-  async verifyConnection() {
-    try {
-      // Don't verify connection if email is not configured
-      if (!process.env.EMAIL_USER || !process.env.EMAIL_PASS) {
-        console.warn('⚠️  Email service not configured - skipping connection verification');
-        return;
-      }
-      
-      await this.transporter.verify();
-      console.log('✅ Email service connected successfully');
-    } catch (error) {
-      console.error('❌ Email service connection failed:', error.message);
-      // Don't throw - allow the service to start even if email is unavailable
+      console.warn('⚠️  Email verification failed:', error.message);
+      return false;
     }
   }
 
@@ -97,63 +99,46 @@ class EmailService {
     const mailOptions = {
       from: process.env.EMAIL_FROM || 'Welldify AI <noreply@welldify.ai>',
       to: user.email,
-      subject: 'Welcome to Welldify AI - Your Workplace Wellness Journey Begins',
+      subject: 'Welcome to Welldify AI - Your Journey to Better Wellness Begins!',
       html: `
         <!DOCTYPE html>
         <html>
         <head>
-          <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Welcome to Welldify AI</title>
+          <meta charset="UTF-8">
           <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
-            .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background: linear-gradient(135deg, #add0b3, #87ceeb); padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-            .content { background: white; padding: 30px; border: 1px solid #e1e8ed; }
-            .footer { background: #f5f5f7; padding: 20px; text-align: center; border-radius: 0 0 10px 10px; }
-            .btn { display: inline-block; padding: 12px 24px; background: #add0b3; color: white; text-decoration: none; border-radius: 6px; margin: 10px 0; }
-            .feature { margin: 20px 0; padding: 15px; background: #f8f9fa; border-left: 4px solid #add0b3; }
+            body { font-family: 'Helvetica Neue', Arial, sans-serif; line-height: 1.8; color: #333; background-color: #f4f4f4; margin: 0; padding: 0; }
+            .container { max-width: 600px; margin: 40px auto; background: white; border-radius: 16px; overflow: hidden; box-shadow: 0 4px 20px rgba(0,0,0,0.1); }
+            .header { background: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%); padding: 40px 30px; text-align: center; color: white; }
+            .header h1 { margin: 0; font-size: 32px; font-weight: 300; letter-spacing: -0.5px; }
+            .header p { margin: 10px 0 0; font-size: 16px; opacity: 0.95; }
+            .content { padding: 40px 30px; }
+            .welcome-message { font-size: 24px; font-weight: 500; margin-bottom: 20px; color: #1e293b; }
+            .section { margin: 30px 0; }
+            .section h2 { font-size: 18px; font-weight: 600; margin-bottom: 12px; color: #334155; }
+            .feature { display: flex; align-items: center; margin: 16px 0; padding: 16px; background: #f8fafc; border-radius: 12px; border-left: 4px solid #3B82F6; }
+            .feature-icon { font-size: 24px; margin-right: 16px; }
+            .feature-text { flex: 1; }
+            .cta-button { display: inline-block; background: linear-gradient(135deg, #3B82F6 0%, #8B5CF6 100%); color: white; padding: 14px 32px; text-decoration: none; border-radius: 8px; font-weight: 500; margin: 20px 0; transition: transform 0.2s, box-shadow 0.2s; }
+            .cta-button:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(59, 130, 246, 0.4); }
+            .footer { padding: 30px; text-align: center; font-size: 14px; color: #64748b; background: #f8fafc; }
+            .footer p { margin: 5px 0; }
+            .social-links { margin-top: 20px; }
+            .social-link { display: inline-block; margin: 0 10px; color: #64748b; text-decoration: none; }
+            ul { padding-left: 20px; margin: 10px 0; }
+            li { margin: 8px 0; color: #475569; }
           </style>
         </head>
         <body>
           <div class="container">
             <div class="header">
-              <h1 style="color: white; margin: 0;">Welcome to Welldify AI</h1>
-              <p style="color: white; margin: 10px 0 0 0;">Your AI-Powered Workplace Wellness Platform</p>
+              <h1>Welcome to Welldify AI!</h1>
+              <p>Your AI-Powered Corporate Wellness Companion</p>
             </div>
             
             <div class="content">
-              <h2>Dear ${user.name},</h2>
+              <div class="welcome-message">Hello ${user.name || 'there'}! 👋</div>
               
-              <p>Welcome to Welldify AI. We are pleased to have you join our workplace wellness platform designed to support your mental health and overall wellbeing.</p>
-              
-              <div class="feature">
-                <h3>Getting Started</h3>
-                <p>Complete your onboarding questionnaire to get personalized wellness insights and start earning Happy Coins!</p>
-              </div>
-              
-              <div class="feature">
-                <h3>Daily Wellness Check-ins</h3>
-                <p>Take 30 seconds each day to rate your mood and share how you're feeling. Your responses help us support you better.</p>
-              </div>
-              
-              <div class="feature">
-                <h3>Rewards System</h3>
-                <p>Earn coins for daily check-ins, completing surveys, and engaging with wellness activities. Redeem them for awesome rewards!</p>
-              </div>
-              
-              <div class="feature">
-                <h3>Personalized AI Insights</h3>
-                <p>Get personalized recommendations, mood analysis, and wellness tips tailored to your unique profile.</p>
-              </div>
-              
-              <div style="background: #fff3cd; border: 1px solid #ffeaa7; padding: 20px; border-radius: 6px; margin: 30px 0;">
-                <h3 style="margin: 0 0 10px 0; color: #856404;">⚠️ Email Verification Required</h3>
-                <p style="margin: 0; color: #856404;">
-                  Please check your inbox for a separate email to verify your email address. 
-                  You must verify your email before you can log in and start your wellness journey.
-                </p>
-              </div>
+              <p>We're thrilled to have you join the Welldify AI community! You're now part of a revolutionary platform that's transforming workplace wellness through the power of artificial intelligence.</p>
               
               <p><strong>Your Account Details:</strong></p>
               <ul>
@@ -181,7 +166,6 @@ class EmailService {
     };
 
     try {
-      // Use a simpler approach without pre-verification for Railway
       const result = await this._sendMailWithRetry(mailOptions);
       console.log(`✅ Welcome email sent to ${user.email}`);
       return result;
@@ -209,61 +193,41 @@ class EmailService {
         <!DOCTYPE html>
         <html>
         <head>
-          <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Verify Your Email</title>
+          <meta charset="UTF-8">
           <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
             .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background: #add0b3; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-            .content { background: white; padding: 30px; border: 1px solid #e1e8ed; }
-            .footer { background: #f5f5f7; padding: 20px; text-align: center; border-radius: 0 0 10px 10px; }
-            .btn { display: inline-block; padding: 15px 30px; background: #add0b3; color: white; text-decoration: none; border-radius: 6px; margin: 20px 0; font-weight: bold; }
-            .security-note { background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 6px; margin: 20px 0; }
+            .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; color: white; }
+            .content { background: #f4f4f4; padding: 30px; }
+            .button { display: inline-block; background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+            .footer { text-align: center; padding: 20px; font-size: 12px; color: #666; }
           </style>
         </head>
         <body>
           <div class="container">
             <div class="header">
-              <h1 style="color: white; margin: 0;">Email Verification Required</h1>
+              <h1>Verify Your Email</h1>
             </div>
             
             <div class="content">
-              <h2>Dear ${user.name},</h2>
+              <p>Hi ${user.name || 'there'},</p>
               
-              <p>Thank you for registering with Welldify AI. To complete your account setup and access all platform features, please verify your email address.</p>
+              <p>Thanks for signing up for Welldify AI! Please click the button below to verify your email address:</p>
               
-              <p style="text-align: center;">
-                <a href="${verificationUrl}" class="btn">Verify Email Address</a>
-              </p>
+              <center>
+                <a href="${verificationUrl}" class="button">Verify Email Address</a>
+              </center>
               
               <p>Or copy and paste this link into your browser:</p>
-              <p style="word-break: break-all; background: #f8f9fa; padding: 10px; border-radius: 4px;">${verificationUrl}</p>
+              <p style="word-break: break-all;">${verificationUrl}</p>
               
-              <div class="security-note">
-                <strong>Security Notice:</strong><br>
-                This verification link will expire in 24 hours for your security. If you did not create a Welldify AI account, please disregard this email.
-              </div>
+              <p>This link will expire in 24 hours.</p>
               
-              <p>Once verified, you'll be able to:</p>
-              <ul>
-                <li>Complete your personalized onboarding</li>
-                <li>Start daily wellness check-ins</li>
-                <li>Earn Happy Coins for rewards</li>
-                <li>Access AI-powered wellness insights</li>
-              </ul>
-              
-              <p>Need assistance? Please reply to this email and our support team will be happy to help.</p>
-              
-              <p>Sincerely,<br>
-              <strong>The Welldify AI Team</strong></p>
+              <p>If you didn't create an account with Welldify AI, please ignore this email.</p>
             </div>
             
             <div class="footer">
-              <p style="margin: 0; color: #666;">
-                This email was sent to ${user.email}<br>
-                Welldify AI | Secure. Private. Focused on Your Wellbeing.
-              </p>
+              <p>© 2024 Welldify AI. All rights reserved.</p>
             </div>
           </div>
         </body>
@@ -287,69 +251,54 @@ class EmailService {
       console.log('Email service not configured - skipping password reset email');
       return { skipped: true };
     }
+
     const resetUrl = `${process.env.CLIENT_URL}/reset-password?token=${resetToken}`;
     
     const mailOptions = {
       from: process.env.EMAIL_FROM || 'Welldify AI <noreply@welldify.ai>',
       to: user.email,
-      subject: 'Password Reset Request - Welldify AI',
+      subject: 'Reset Your Welldify AI Password',
       html: `
         <!DOCTYPE html>
         <html>
         <head>
-          <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Reset Your Password</title>
+          <meta charset="UTF-8">
           <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
             .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background: #ff6b6b; padding: 30px; text-align: center; border-radius: 10px 10px 0 0; }
-            .content { background: white; padding: 30px; border: 1px solid #e1e8ed; }
-            .footer { background: #f5f5f7; padding: 20px; text-align: center; border-radius: 0 0 10px 10px; }
-            .btn { display: inline-block; padding: 15px 30px; background: #ff6b6b; color: white; text-decoration: none; border-radius: 6px; margin: 20px 0; font-weight: bold; }
-            .warning { background: #fff3cd; border: 1px solid #ffeaa7; padding: 15px; border-radius: 6px; margin: 20px 0; }
+            .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; color: white; }
+            .content { background: #f4f4f4; padding: 30px; }
+            .button { display: inline-block; background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+            .footer { text-align: center; padding: 20px; font-size: 12px; color: #666; }
           </style>
         </head>
         <body>
           <div class="container">
             <div class="header">
-              <h1 style="color: white; margin: 0;">Password Reset Request</h1>
+              <h1>Password Reset Request</h1>
             </div>
             
             <div class="content">
-              <h2>Dear ${user.name},</h2>
+              <p>Hi ${user.name || 'there'},</p>
               
-              <p>We received a request to reset your Welldify AI account password. If you initiated this request, please click the button below to create a new password.</p>
+              <p>We received a request to reset your password. Click the button below to create a new password:</p>
               
-              <p style="text-align: center;">
-                <a href="${resetUrl}" class="btn">Reset Password</a>
-              </p>
+              <center>
+                <a href="${resetUrl}" class="button">Reset Password</a>
+              </center>
               
               <p>Or copy and paste this link into your browser:</p>
-              <p style="word-break: break-all; background: #f8f9fa; padding: 10px; border-radius: 4px;">${resetUrl}</p>
+              <p style="word-break: break-all;">${resetUrl}</p>
               
-              <div class="warning">
-                <strong>Important Security Information:</strong><br>
-                • This reset link expires in 10 minutes<br>
-                • If you did not request this reset, please ignore this email<br>
-                • Your password will not change unless you click the link above<br>
-                • For security purposes, this link can only be used once
-              </div>
+              <p>This link will expire in 1 hour.</p>
               
-              <p><strong>Did not request a password reset?</strong><br>
-              Your account remains secure. Someone may have entered your email address by mistake. You can safely disregard this email.</p>
+              <p>If you didn't request a password reset, please ignore this email. Your password won't be changed.</p>
               
-              <p>For additional security questions, please contact our support team by replying to this email.</p>
-              
-              <p>Regards,<br>
-              <strong>The Welldify AI Security Team</strong></p>
+              <p>For security reasons, if you didn't make this request, please contact our support team.</p>
             </div>
             
             <div class="footer">
-              <p style="margin: 0; color: #666;">
-                This email was sent to ${user.email}<br>
-                Welldify AI | Your Privacy and Security Are Our Priority
-              </p>
+              <p>© 2024 Welldify AI. All rights reserved.</p>
             </div>
           </div>
         </body>
@@ -368,65 +317,60 @@ class EmailService {
   }
 
   // Send daily check-in reminder
-  async sendCheckInReminder(user) {
+  async sendDailyCheckinReminder(user) {
     if (!this.isConfigured) {
       console.log('Email service not configured - skipping check-in reminder');
       return { skipped: true };
     }
+
+    const checkinUrl = `${process.env.CLIENT_URL}/dashboard`;
+    
     const mailOptions = {
       from: process.env.EMAIL_FROM || 'Welldify AI <noreply@welldify.ai>',
       to: user.email,
-      subject: 'Daily Wellness Check-in Reminder - Welldify AI',
+      subject: '🌟 Time for Your Daily Wellness Check-in!',
       html: `
         <!DOCTYPE html>
         <html>
         <head>
-          <meta charset="utf-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0">
-          <title>Daily Check-in Reminder</title>
+          <meta charset="UTF-8">
           <style>
-            body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+            body { font-family: Arial, sans-serif; line-height: 1.6; color: #333; }
             .container { max-width: 600px; margin: 0 auto; padding: 20px; }
-            .header { background: linear-gradient(135deg, #add0b3, #87ceeb); padding: 20px; text-align: center; border-radius: 10px 10px 0 0; }
-            .content { background: white; padding: 20px; border: 1px solid #e1e8ed; }
-            .footer { background: #f5f5f7; padding: 15px; text-align: center; border-radius: 0 0 10px 10px; }
-            .btn { display: inline-block; padding: 12px 24px; background: #add0b3; color: white; text-decoration: none; border-radius: 6px; margin: 10px 0; }
-            .streak { background: #e8f5e8; border: 1px solid #add0b3; padding: 15px; border-radius: 6px; text-align: center; margin: 15px 0; }
+            .header { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); padding: 30px; text-align: center; color: white; }
+            .content { background: #f4f4f4; padding: 30px; }
+            .button { display: inline-block; background: #667eea; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin: 20px 0; }
+            .streak { background: white; padding: 20px; border-radius: 10px; text-align: center; margin: 20px 0; }
+            .footer { text-align: center; padding: 20px; font-size: 12px; color: #666; }
           </style>
         </head>
         <body>
           <div class="container">
             <div class="header">
-              <h1 style="color: white; margin: 0;">Time for Your Daily Check-in</h1>
+              <h1>Time for Your Daily Check-in!</h1>
             </div>
             
             <div class="content">
-              <h2>Good morning, ${user.name},</h2>
+              <p>Hi ${user.name || 'there'},</p>
               
-              <p>Take a moment to reflect on your wellbeing. Your daily check-in helps us support you better and keeps you connected to your wellness journey.</p>
+              <p>It's time for your daily wellness check-in! Take a moment to reflect on how you're feeling today.</p>
               
-              ${user.wellness.currentStreak > 0 ? `
+              ${user.currentStreak ? `
               <div class="streak">
-                <h3 style="margin: 0; color: #2d5a2d;">Current Streak: ${user.wellness.currentStreak} days</h3>
-                <p style="margin: 5px 0 0 0;">Excellent consistency. Keep up the great work!</p>
+                <h2>🔥 Current Streak: ${user.currentStreak} days!</h2>
+                <p>Keep it going!</p>
               </div>
               ` : ''}
               
-              <p style="text-align: center;">
-                <a href="${process.env.CLIENT_URL}/checkin" class="btn">Start Check-in (30 seconds)</a>
-              </p>
+              <center>
+                <a href="${checkinUrl}" class="button">Complete Check-in</a>
+              </center>
               
-              <p><strong>Earn ${process.env.DAILY_CHECKIN_COINS || 50} Happy Coins</strong> for completing today's check-in.</p>
-              
-              <p style="font-size: 14px; color: #666;">
-                <em>This daily reminder helps maintain consistency with your wellness goals. Notification preferences can be adjusted in your account settings.</em>
-              </p>
+              <p>Remember, consistency is key to improving your wellness journey!</p>
             </div>
             
             <div class="footer">
-              <p style="margin: 0; color: #666; font-size: 12px;">
-                Welldify AI | Supporting Your Daily Wellness Journey
-              </p>
+              <p>© 2024 Welldify AI. All rights reserved.</p>
             </div>
           </div>
         </body>
@@ -450,12 +394,20 @@ class EmailService {
       throw new Error('Email service not configured');
     }
 
+    // Verify connection on first send if needed
+    if (!this.isVerified && this.verificationAttempted) {
+      const verified = await this.verifyIfNeeded();
+      if (!verified) {
+        throw new Error('Email service could not be verified');
+      }
+    }
+
     let lastError;
     
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       try {
         // Direct send without pre-verification
-        const result = await this._sendMailWithRetry(mailOptions);
+        const result = await this.transporter.sendMail(mailOptions);
         return result;
       } catch (error) {
         lastError = error;
@@ -472,4 +424,5 @@ class EmailService {
   }
 }
 
+// Export as singleton
 module.exports = new EmailService();
