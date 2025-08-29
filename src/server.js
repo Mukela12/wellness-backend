@@ -14,6 +14,8 @@ const PORT = process.env.PORT || 5000;
 async function initializeServices() {
   console.log('\n🚀 Starting service initialization...\n');
   
+
+  
   // Connect to MongoDB
   await connectDB();
   
