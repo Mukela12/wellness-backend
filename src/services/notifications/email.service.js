@@ -22,8 +22,8 @@ class EmailService {
         socketTimeout: 20000    // 20 seconds
       });
 
-      // Verify transporter configuration asynchronously (don't block startup)
-      setTimeout(() => this.verifyConnection(), 2000);
+      // Skip verification at startup - verify only when sending emails
+      console.log('📧 Email service initialized (verification deferred)');
     } else {
       console.warn('⚠️  Email service not configured - emails will be disabled');
       this.transporter = null;
@@ -144,8 +144,9 @@ class EmailService {
       console.log(`✅ Welcome email sent to ${user.email}`);
       return result;
     } catch (error) {
-      console.error('❌ Failed to send welcome email:', error);
-      throw error;
+      console.error('❌ Failed to send welcome email:', error.message || error);
+      // Return error but don't throw - allow operation to continue
+      return { error: true, message: error.message };
     }
   }
 
@@ -233,8 +234,8 @@ class EmailService {
       console.log(`✅ Verification email sent to ${user.email}`);
       return result;
     } catch (error) {
-      console.error('❌ Failed to send verification email:', error);
-      throw error;
+      console.error('❌ Failed to send verification email:', error.message || error);
+      return { error: true, message: error.message };
     }
   }
 
@@ -319,8 +320,8 @@ class EmailService {
       console.log(`✅ Password reset email sent to ${user.email}`);
       return result;
     } catch (error) {
-      console.error('❌ Failed to send password reset email:', error);
-      throw error;
+      console.error('❌ Failed to send password reset email:', error.message || error);
+      return { error: true, message: error.message };
     }
   }
 
@@ -396,8 +397,8 @@ class EmailService {
       console.log(`✅ Check-in reminder sent to ${user.email}`);
       return result;
     } catch (error) {
-      console.error('❌ Failed to send check-in reminder:', error);
-      throw error;
+      console.error('❌ Failed to send check-in reminder:', error.message || error);
+      return { error: true, message: error.message };
     }
   }
 }
