@@ -17,13 +17,13 @@ class EmailService {
           rejectUnauthorized: false
         },
         // Add connection timeout settings
-        connectionTimeout: 5000, // 5 seconds
-        greetingTimeout: 5000,  // 5 seconds
-        socketTimeout: 10000    // 10 seconds
+        connectionTimeout: 10000, // 10 seconds
+        greetingTimeout: 10000,  // 10 seconds
+        socketTimeout: 20000    // 20 seconds
       });
 
-      // Verify transporter configuration
-      this.verifyConnection();
+      // Verify transporter configuration asynchronously (don't block startup)
+      setTimeout(() => this.verifyConnection(), 2000);
     } else {
       console.warn('⚠️  Email service not configured - emails will be disabled');
       this.transporter = null;
