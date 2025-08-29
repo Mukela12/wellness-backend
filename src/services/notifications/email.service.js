@@ -24,8 +24,11 @@ class EmailService {
         console.log('- Secure:', process.env.EMAIL_SECURE || 'false');
       }
       
-      // Create transporter with Railway-optimized settings
-      this.transporter = nodemailer.createTransport({
+      // Railway-specific configuration
+      const isRailway = process.env.RAILWAY_ENVIRONMENT === 'production';
+      
+      // Base configuration
+      const transportConfig = {
         host: process.env.EMAIL_HOST || 'smtp.gmail.com',
         port: parseInt(process.env.EMAIL_PORT) || 587,
         secure: process.env.EMAIL_SECURE === 'true',
@@ -33,32 +36,34 @@ class EmailService {
           user: process.env.EMAIL_USER,
           pass: process.env.EMAIL_PASS
         },
-        // Force IPv4 (Railway might have IPv6 issues)
-        dnsOptions: {
-          preferIPv4: true,
-          ipv4first: true
-        },
         tls: {
           rejectUnauthorized: false,
-          minVersion: 'TLSv1.2'
+          minVersion: 'TLSv1.2',
+          ciphers: 'SSLv3'
         },
-        // Optimized settings for Railway
-        connectionTimeout: 25000, // 25 seconds (increased)
-        greetingTimeout: 25000,  // 25 seconds (increased)
-        socketTimeout: 45000,    // 45 seconds (increased)
-        // Pool settings for better performance
-        pool: true,
-        maxConnections: 1,       // Reduced for Railway
-        maxMessages: 100,
-        rateLimit: 5,           // Reduced rate limit
-        rateDelta: 2000,        // Increased rate delta
-        logger: process.env.NODE_ENV === 'development',
-        debug: process.env.NODE_ENV === 'development',
-        // Additional settings for better compatibility
+        // Timeouts
+        connectionTimeout: isRailway ? 60000 : 25000,  // 60s on Railway
+        greetingTimeout: isRailway ? 60000 : 25000,     // 60s on Railway
+        socketTimeout: isRailway ? 120000 : 45000,      // 120s on Railway
+        // Pool settings
+        pool: false,  // Disable pooling for Railway
+        logger: process.env.NODE_ENV === 'development' || isRailway,
+        debug: process.env.NODE_ENV === 'development' || isRailway,
+        // Additional settings
         ignoreTLS: false,
         requireTLS: true,
         authMethod: 'PLAIN'
-      });
+      };
+      
+      // Add proxy if specified for Railway
+      if (process.env.SMTP_PROXY) {
+        console.log('🔗 Using SMTP proxy:', process.env.SMTP_PROXY);
+        const proxyUrl = new URL(process.env.SMTP_PROXY);
+        transportConfig.proxy = proxyUrl.href;
+      }
+      
+      // Create transporter
+      this.transporter = nodemailer.createTransport(transportConfig);
 
       // Verify connection
       console.log('📧 Verifying email connection...');
