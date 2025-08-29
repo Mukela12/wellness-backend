@@ -16,17 +16,58 @@ class EmailService {
         tls: {
           rejectUnauthorized: false
         },
-        // Add connection timeout settings
-        connectionTimeout: 10000, // 10 seconds
-        greetingTimeout: 10000,  // 10 seconds
-        socketTimeout: 20000    // 20 seconds
+        // Increase timeouts for Railway environment
+        connectionTimeout: 30000, // 30 seconds
+        greetingTimeout: 30000,  // 30 seconds  
+        socketTimeout: 60000,    // 60 seconds
+        // Add additional settings for better compatibility
+        logger: false,
+        debug: false,
+        pool: true,
+        maxConnections: 1,
+        maxMessages: 3,
+        rateLimit: true,
+        rateDelta: 1000,
+        rateLimit: 10
       });
 
       // Skip verification at startup - verify only when sending emails
       console.log('📧 Email service initialized (verification deferred)');
+      
+      // Set up connection pool events
+      this.transporter.on('idle', () => {
+        console.log('📧 Email connection pool is idle');
+      });
     } else {
       console.warn('⚠️  Email service not configured - emails will be disabled');
       this.transporter = null;
+    }
+  }
+
+  // Ensure transporter is ready before sending
+  async ensureTransporter() {
+    if (!this.isConfigured) {
+      throw new Error('Email service not configured');
+    }
+    
+    if (!this.transporter) {
+      throw new Error('Email transporter not initialized');
+    }
+    
+    // Test connection before sending (with retry)
+    try {
+      await this.transporter.verify();
+      return true;
+    } catch (error) {
+      console.warn('Email connection verification failed, retrying...', error.message);
+      // Try one more time with a fresh connection
+      try {
+        await this.transporter.verify();
+        return true;
+      } catch (retryError) {
+        console.error('Email connection retry failed:', retryError.message);
+        throw retryError;
+      }
     }
   }
 
@@ -140,7 +181,8 @@ class EmailService {
     };
 
     try {
-      const result = await this.transporter.sendMail(mailOptions);
+      // Use a simpler approach without pre-verification for Railway
+      const result = await this._sendMailWithRetry(mailOptions);
       console.log(`✅ Welcome email sent to ${user.email}`);
       return result;
     } catch (error) {
@@ -230,7 +272,7 @@ class EmailService {
     };
 
     try {
-      const result = await this.transporter.sendMail(mailOptions);
+      const result = await this._sendMailWithRetry(mailOptions);
       console.log(`✅ Verification email sent to ${user.email}`);
       return result;
     } catch (error) {
@@ -316,7 +358,7 @@ class EmailService {
     };
 
     try {
-      const result = await this.transporter.sendMail(mailOptions);
+      const result = await this._sendMailWithRetry(mailOptions);
       console.log(`✅ Password reset email sent to ${user.email}`);
       return result;
     } catch (error) {
@@ -393,13 +435,40 @@ class EmailService {
     };
 
     try {
-      const result = await this.transporter.sendMail(mailOptions);
+      const result = await this._sendMailWithRetry(mailOptions);
       console.log(`✅ Check-in reminder sent to ${user.email}`);
       return result;
     } catch (error) {
       console.error('❌ Failed to send check-in reminder:', error.message || error);
       return { error: true, message: error.message };
     }
+  }
+
+  // Helper method to send mail with retry logic
+  async _sendMailWithRetry(mailOptions, maxRetries = 2) {
+    if (!this.isConfigured || !this.transporter) {
+      throw new Error('Email service not configured');
+    }
+
+    let lastError;
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        // Direct send without pre-verification
+        const result = await this._sendMailWithRetry(mailOptions);
+        return result;
+      } catch (error) {
+        lastError = error;
+        console.warn(`Email send attempt ${attempt}/${maxRetries} failed:`, error.message);
+        
+        if (attempt < maxRetries) {
+          // Wait before retry (exponential backoff)
+          await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+        }
+      }
+    }
+    
+    throw lastError;
   }
 }
 
