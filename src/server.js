@@ -22,11 +22,20 @@ async function initializeServices() {
     emailService.initialize(),
     openAIService.initialize(),
     whatsappService.initialize(),
-    slackService.initialize()
+    slackService.initialize(),
+    surveyScheduler.initialize()
   ];
   
   // Wait for all services to initialize
-  await Promise.allSettled(servicePromises);
+  const results = await Promise.allSettled(servicePromises);
+  
+  // Log any failed initializations
+  results.forEach((result, index) => {
+    if (result.status === 'rejected') {
+      const serviceName = ['Email', 'OpenAI', 'WhatsApp', 'Slack', 'Survey Scheduler'][index];
+      console.error(`❌ ${serviceName} initialization failed:`, result.reason);
+    }
+  });
   
   console.log('\n✅ All services initialization completed\n');
 }
@@ -54,8 +63,6 @@ async function startServer() {
       console.log('⚠️  WhatsApp credentials not found, scheduled jobs disabled');
     }
 
-    // Initialize Survey Scheduler
-    console.log('📋 Survey scheduler initialized');
     
   } catch (error) {
     console.error('Failed to start server:', error);

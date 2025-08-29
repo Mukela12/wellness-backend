@@ -7,10 +7,18 @@ const slackSurveyService = require('./slack/slackSurvey.service');
 class SurveyScheduler {
   constructor() {
     this.scheduledJobs = new Map();
-    this.init();
+    this.cronJobs = [];
+    this.isInitialized = false;
   }
 
-  init() {
+  async initialize() {
+    if (this.isInitialized) {
+      return;
+    }
+
+    console.log('📅 Initializing survey scheduler...');
+    
+    try {
     // Schedule automatic pulse survey creation every Monday at 9:00 AM
     cron.schedule('0 9 * * 1', async () => {
       console.log('🔄 Running weekly pulse survey scheduler...');
@@ -29,7 +37,12 @@ class SurveyScheduler {
       await this.closeExpiredSurveys();
     });
 
-    console.log('📅 Survey scheduler initialized successfully');
+      this.isInitialized = true;
+      console.log('✅ Survey scheduler initialized successfully');
+    } catch (error) {
+      console.error('❌ Survey scheduler initialization failed:', error.message);
+      console.warn('⚠️  Survey scheduling will be disabled');
+    }
   }
 
   async createWeeklyPulseSurvey() {
