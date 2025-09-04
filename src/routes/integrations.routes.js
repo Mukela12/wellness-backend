@@ -10,6 +10,7 @@ router.post('/slack/quick-connect', integrationsController.quickConnectSlack);
 router.get('/status', authenticate, integrationsController.getIntegrationStatus);
 
 // Slack integration
+router.get('/slack/status', authenticate, integrationsController.getSlackStatus);
 router.get('/slack/oauth-url', authenticate, integrationsController.getSlackOAuthUrl);
 router.post('/slack/connect', authenticate, integrationsController.connectSlack);
 router.post('/slack/disconnect', authenticate, integrationsController.disconnectSlack);

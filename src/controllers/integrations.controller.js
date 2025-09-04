@@ -140,6 +140,34 @@ const integrationsController = {
     }
   },
 
+  // Get Slack status
+  async getSlackStatus(req, res) {
+    try {
+      const userId = req.user.id;
+
+      const user = await User.findById(userId).select('integrations');
+      if (!user) {
+        return sendErrorResponse(res, 'User not found', 404);
+      }
+
+      const slackStatus = {
+        connected: user.integrations?.slack?.isConnected || false,
+        userId: user.integrations?.slack?.userId || null,
+        teamId: user.integrations?.slack?.teamId || null,
+        teamName: user.integrations?.slack?.teamName || null,
+        connectedAt: user.integrations?.slack?.connectedAt || null
+      };
+
+      sendSuccessResponse(res, {
+        message: 'Slack status retrieved successfully',
+        data: slackStatus
+      });
+    } catch (error) {
+      console.error('Get Slack status error:', error);
+      sendErrorResponse(res, 'Failed to retrieve Slack status', 500);
+    }
+  },
+
   // Generate Slack OAuth URL
   async getSlackOAuthUrl(req, res) {
     try {
