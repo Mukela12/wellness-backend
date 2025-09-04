@@ -38,12 +38,12 @@ router.post('/login', validateLogin, authController.login);
 router.post('/refresh', verifyRefreshToken, authController.refreshToken);
 
 /**
- * @route   GET /api/auth/verify-email
+ * @route   POST /api/auth/verify-email
  * @desc    Verify user's email address
  * @access  Public
- * @query   { token }
+ * @body    { token }
  */
-router.get('/verify-email', authController.verifyEmail);
+router.post('/verify-email', authController.verifyEmail);
 
 /**
  * @route   POST /api/auth/resend-verification

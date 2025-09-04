@@ -326,7 +326,7 @@ class AuthController {
   // Verify email address
   async verifyEmail(req, res) {
     try {
-      const { token } = req.query;
+      const { token } = req.body;
 
       if (!token) {
         return res.status(HTTP_STATUS.BAD_REQUEST).json({
