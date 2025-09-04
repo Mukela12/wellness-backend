@@ -21,7 +21,12 @@ class EmailService {
       
       // Initialize Resend client
       this.resend = new Resend(apiKey);
-      this.fromEmail = process.env.EMAIL_FROM || 'WellnessAI <onboarding@resend.dev>';
+      
+      // Configure sender email using FROM_NAME and FROM_EMAIL or EMAIL_FROM
+      const fromEmail = process.env.FROM_EMAIL || process.env.EMAIL_FROM || 'onboarding@resend.dev';
+      const fromName = process.env.FROM_NAME || 'WellnessAI';
+      this.fromEmail = `${fromName} <${fromEmail}>`;
+      
       this.isConfigured = true;
       
       // Verify the service by checking domains (lightweight check)
